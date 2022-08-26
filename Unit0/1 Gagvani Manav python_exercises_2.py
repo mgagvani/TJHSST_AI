@@ -3,7 +3,7 @@ import sys
 s = sys.argv[1]
 
 print("1: " , s[2])    
-print("2: " , s[6])  
+print("2: " , s[4])  
 print("3: " , len(s))  
 print("4: " , s[0])  
 print("5: " , s[-1])  
