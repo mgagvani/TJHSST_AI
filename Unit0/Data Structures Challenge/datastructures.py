@@ -1,7 +1,8 @@
 from time import perf_counter
+import sys
 
-def main():
-    f1, f2, f3 = "10kfile1.txt", "10kfile2.txt", "10kfile3.txt"
+def main(args):
+    f1, f2, f3 = args
 
     with open(f1) as f:
         list1 = [int(line.strip()) for line in f]
@@ -50,11 +51,15 @@ def main():
 
     # Problem 6
     curridx, previdx, seq = 0, 0, set()
-    for i, val in enumerate(list1):
-        if val % 53 == 0:
-            previdx = curridx
-            curridx = i
-            seq.add(min(list1[previdx:curridx+1]))
+    for i, val in enumerate(list1): #iterate in the order the sequence was read O(n)
+        if val % 53 == 0: # trigger                                             O(1)
+            previdx = curridx             #                                     O(1)
+            curridx = i # this is the index I am at (left most)                 O(1)  
+            _lis = sorted(list1[:curridx+1]) # this is what I have seen so far  O(nlogn)
+            idx = 0
+            while _lis[idx] in seq:
+                idx += 1
+            seq.add(_lis[idx]) # add to set so no duplicates                     O(1)
     print("6: ", sum(seq))
 
         
@@ -62,8 +67,10 @@ def main():
 
 
 if __name__ == "__main__":
+    args = sys.argv
+    
     start = perf_counter()
 
-    main()
+    main(args[1:])
 
     print(f"Total time: {perf_counter() - start} seconds")
