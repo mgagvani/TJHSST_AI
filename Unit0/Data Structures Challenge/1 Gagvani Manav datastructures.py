@@ -72,11 +72,10 @@ def main(args):
     print("5: ",list(reversed(sorted([num for num in dict2.keys() if dict2[num] > 1])[-10:])))
 
     # Problem 6 (kinda slow - 0.007)
-    curridx, previdx, seq, heap = 0, 0, set(), []
+    curridx, seq, heap = 0, set(), []
     for i, val in enumerate(list1): #iterate in the order the sequence was read O(n)
         heappush(heap, val)
         if val % 53 == 0: # trigger                                             O(1)
-            previdx = curridx             #                                     O(1)
             curridx = i # this is the index I am at (left most)                 O(1)  
             # _heap = heapify(list1[:curridx+1]) # this is what I have seen so far  O(nlogn)
             idx = 0
