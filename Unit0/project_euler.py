@@ -1,4 +1,3 @@
-# imports will go here if needed
 import time
 
 def is_prime(x):
@@ -69,16 +68,19 @@ def main():
             primes.append(i)
     print("7: ", primes[10000])
 
-    # Problem 8 NOT WORKING
-    maxprod = 0
-    for i in range(0,len(x:=get_problem8_number())-13):
-        a = 1
-        for j in range(14):
-            a *= x[i+j]
-        if a > maxprod:
-            #print(a, maxprod)
-            maxprod = a
-    print("8: ", maxprod)
+    # Problem 8 
+    currmax = 1
+    for i, __value in enumerate(x:=get_problem8_number()):
+        result = 1
+        for j in range(13):
+            try:
+                result *= x[i+j]
+            except:
+                pass
+        if result > currmax:
+            currmax = result
+    print("8: ", currmax)
+
 
     # Problem 9
     for i in range(373,377):
@@ -95,24 +97,22 @@ def main():
         for j, val in enumerate(row):
                 pass
     
-    # Problem 12 NOT WORKING 
-    '''
-    num = 0
-    i = 1
-    divisors = set()
-    for k in range(0, 892873498):
-        num += i
-        print(i, num)
-        divisors.clear()
-        print(divisors)
-        for j in range(1, int((num)**0.5)):
-            if num % j == 0:
-                divisors.add(j)
-        if len(divisors) > 500:
-            print(num)
+    # Problem 12
+    def get_tri(n):
+        return int(n*(n+1)/2)
+    def get_numfactors(n):
+        s = set()
+        for i in range(1, int(n/2)+1):
+            if n % i == 0:
+                s.add(i)
+        return len(s)
+    _t = 12375
+    while True:
+        if get_numfactors(x:=get_tri(_t)) > 500:
+            print("12: ", x)
             break
-        i += 1
-    '''
+        _t += 1
+        
 
     # Problem 14
     def sequence(num): 
@@ -129,6 +129,27 @@ def main():
         if (x:=sequence(i)) > longest:
             longest, longesti = x, i
     print("14: ", longesti)
+
+    # Problem 24
+    # import math
+    # math.factorial()
+
+    # Problem 28
+    def find_sum(limit):
+        limit *= limit
+        num, add, result = 1, 2, 1
+        while num < limit:
+            for _i in range(4):
+                num += add
+                result += num
+            add+=2
+        return result
+    print("28: ", find_sum(1001))
+
+    # Problem 29
+    print("29: ", len(set([i**j for i in range(2,101) for j in range(2,101)])))
+        
+        
 
 
 
