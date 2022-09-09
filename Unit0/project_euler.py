@@ -131,8 +131,21 @@ def main():
     print("14: ", longesti)
 
     # Problem 24
-    # import math
-    # math.factorial()
+    fib_list = [1, 1, 2, 6, 24, 120, 720, 5040, 40320] # tried to make it fancy
+    def factorial(n, fib_list):
+        try:
+            return fib_list[n]
+        except:
+            result = 1
+            for i in range(2, n + 1):
+                result *= i
+            return result
+
+    l, n, digits= [], 1000000-1, list(range(10))
+    for i in range(len(digits) - 1, -1, -1):
+        idx, n = divmod(n, factorial(i, fib_list)) # the remainder is not helpful
+        l.append(digits.pop(idx))
+    print("24: ", "".join(str(i) for i in l))
 
     # Problem 28
     def find_sum(limit):
