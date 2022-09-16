@@ -41,15 +41,16 @@ def find_goal(string):
     return ''.join(a)
 
 
-def swap(sourcei, sourcej, desti, destj, mat):
+def swap(sourcei, sourcej, desti, destj, mat, size):
+    newmat = to_mat(to_str(mat), size)
     # print(sourcei, sourcej, desti, destj)
-    source = mat[sourcei][sourcej]
-    dest = mat[desti][destj]
+    source = newmat[sourcei][sourcej]
+    dest = newmat[desti][destj]
     # print(source, dest)
     # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    mat[sourcei][sourcej] = dest
-    mat[desti][destj] = source
-    return to_str(mat)
+    newmat[sourcei][sourcej] = dest
+    newmat[desti][destj] = source
+    return to_str(newmat)
 
 
 def get_children(str, size):
@@ -67,35 +68,37 @@ def get_children(str, size):
 
     # horizontal swapping
 
-    print(f"di,dj = ({di},{dj}), value is {mat[di][dj]}")
+    # print(f"di,dj = ({di},{dj}), value is {mat[di][dj]}")
+    # print(mat)
 
     if dj == 0:  # swap with right neighbour
-        children.append(swap(di, dj, di, dj + 1, mat))
+        children.append(swap(di, dj, di, dj + 1, mat, size))
     elif dj == len(mat[0]) - 1:
         # swap with left neighbour
-        children.append(swap(di, dj, di, dj - 1, mat))
+        children.append(swap(di, dj, di, dj - 1, mat, size))
     else:
           # swap with both neigubours
-        children.append(swap(di, dj, di, dj + 1, mat))
-        children.append(swap(di, dj, di, dj - 1, mat))
+        children.append(swap(di, dj, di, dj + 1, mat, size))
+        children.append(swap(di, dj, di, dj - 1, mat, size))
 
     # vertical swapping
+    # print(mat)
 
     if di == 0:  # swap with below neighbour
-        children.append(swap(di, dj, di + 1, dj, mat))
+        children.append(swap(di, dj, di + 1, dj, mat, size))
     elif di == len(mat[0]) - 1:
         # swap with above
-        children.append(swap(di, dj, di - 1, dj, mat))
+        children.append(swap(di, dj, di - 1, dj, mat, size))
     else:
           # swap with both neigubours
-        children.append(swap(di, dj, di + 1, dj, mat))
-        children.append(swap(di, dj, di - 1, dj, mat))
+        children.append(swap(di, dj, di + 1, dj, mat, size))
+        children.append(swap(di, dj, di - 1, dj, mat, size))
     return children
 
 
 def bfs(start, goal, size): # pass in strings!! (and the size of the string)
-    print(matstr(to_mat(start, size)))
-    print("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_")
+    # print(matstr(to_mat(start, size)))
+    # print("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_")
     fringe = deque()
     visited = set()
     fringe.append(start)
@@ -103,9 +106,9 @@ def bfs(start, goal, size): # pass in strings!! (and the size of the string)
     while len(fringe) > 0:
         v = fringe.popleft()
         if v == goal:
-            return v
+            return v, i
         for child in get_children(v, size):
-            print(matstr(to_mat(child, size)))
+            # print(matstr(to_mat(child, size)))
             if child not in visited:
                 fringe.append(child)
                 visited.add(child)
@@ -122,11 +125,10 @@ if __name__ == "__main__":
 
         size, start = load_string(line)
         goal = find_goal(start)
-        print(f"goal: {goal}")
-        _found = bfs(start, goal, size)
+        # print(f"goal: {goal}")
+        _found, num = bfs(start, goal, size)
 
         b = time.perf_counter()
-        print(f"Line {i}: {to_str(start)},  {_found}  found in {b-a} seconds")
-        break
+        print(f"Line {i}: {to_str(start)},  {_found}  found in {num} moves and {b-a} seconds")
         
 
