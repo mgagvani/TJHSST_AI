@@ -1,6 +1,10 @@
+from distutils.spawn import find_executable
+from re import S
 import sys
 import time
 from collections import deque
+from itertools import permutations
+
 
 
 def load_string(line):
@@ -102,8 +106,6 @@ def get_children(str, size):
 
 
 def bfs(start, goal, size): # pass in strings!! (and the size of the string)
-    # print(matstr(to_mat(start, size)))
-    # print("_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_")
     fringe = deque()
     visited = set()
     fringe.append((start, 0))
@@ -117,21 +119,90 @@ def bfs(start, goal, size): # pass in strings!! (and the size of the string)
             if child not in visited:
                 fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
                 visited.add(child)
+    return -1
+
+def modBFS(size):
+    if size == 2:
+        s = "123."
+    else:
+        s = "12345678."
+    fringe = deque()
+    visited = set()
+    fringe.append((s, 0))
+    visited.add(s)
+    while len(fringe) > 0:
+        v, _l = fringe.popleft() # DIS IS PARENT
+        for child in get_children(v, size):
+            # print(matstr(to_mat(child, size)))  
+            if child not in visited:
+                fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
+                visited.add(child)
+    return len(visited)
+
+def modBFS2(start, goal): # pass in strings!! (and the size of the string)
+    fringe = deque()
+    visited = set()
+    fringe.append((start, 0))
+    visited.add(start)
+    while len(fringe) > 0:
+        v, _l = fringe.popleft() # DIS IS PARENT
+        if v == goal and _l == 10:
+            return 1
+        elif _l > 10:
+            return 0
+        elif v == goal and _l < 10:
+            return 0
+        for child in get_children(v, 3):
+            # print(matstr(to_mat(child, size)))  
+            if child not in visited:
+                fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
+                visited.add(child)
+    return 0
+
+    
 
 
-def backtrack(c, parents, start):
-    i = 0
-    child = c
-    while parents[child] != start:
-        child = parents[child]
-        i += 1
-    return i
+def generate_puzzles(size):
+    sizey = size * size
+    s = ""
+    for i in range(sizey - 1):
+        s += chr(i + 65)
+    s += "."
+    perms = [''.join(p) for p in permutations(list(s))]
+    return perms
 
+# ANSWERS TO QUESTIONS:
+"""
+1. 181452
+2. ABCDEFHG. because you cannot swap the H and G without moving the rest. 
+5. 20 steps takes 47 seconds
+"""
 
 if __name__ == "__main__":
     args = sys.argv
     path = args[1]
 
+    """
+    print(modBFS(2) + modBFS(3))
+
+    puzzles = generate_puzzles(3) 
+
+    for puzzle in puzzles:
+        goal = find_goal(puzzle)
+        print(bfs(puzzle, goal, 3), puzzle, goal)
+        break # delete this to find all
+
+    a = 0
+    for puzzle in puzzles:
+        a += modBFS2(puzzle, "ABCDEFGH.")
+        if a % 10 == 0:
+            print(puzzle, a)
+    print(a)
+    """
+
+
+
+    
     with open(path) as fileReader:
         line_list = [line.strip() for line in fileReader]
 
@@ -146,8 +217,8 @@ if __name__ == "__main__":
         _found, level = bfs(start, goal, size)
         # steps = backtrack(goal, parents, start)
 
-
         c = time.perf_counter()
         print(f"Line {i}: {to_str(start)}, {level} moves found in {c-b} seconds")
+    
         
 
