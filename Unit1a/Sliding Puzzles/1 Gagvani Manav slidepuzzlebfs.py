@@ -1,9 +1,7 @@
-from distutils.spawn import find_executable
-from re import S
 import sys
 import time
 from collections import deque
-from itertools import permutations
+# from itertools import permutations
 
 
 
@@ -189,42 +187,43 @@ def modBFS(size):
                 visited.add(child)
     return len(visited)
 
-def modBFS2(start, goal): # pass in strings!! (and the size of the string)
+def modBFS2(start): 
     fringe = deque()
     visited = set()
     fringe.append((start, 0))
     visited.add(start)
+    counter = 0
+    allv = []
     while len(fringe) > 0:
         v, _l = fringe.popleft() # DIS IS PARENT
-        if v == goal and _l == 10:
-            return 1
-        elif _l > 10:
-            return 0
-        elif v == goal and _l < 10:
-            return 0
+        if _l == 31:
+            counter += 1
+            allv.append(v)
+            continue
         for child in get_children(v, 3):
-            # print(matstr(to_mat(child, size)))  
             if child not in visited:
                 fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
                 visited.add(child)
-    return 0
+    return counter, allv
 
     
 
 
-def generate_puzzles(size):
-    sizey = size * size
-    s = ""
-    for i in range(sizey - 1):
-        s += chr(i + 65)
-    s += "."
-    perms = [''.join(p) for p in permutations(list(s))]
-    return perms
+# def generate_puzzles(size):
+#     sizey = size * size
+#     s = ""
+#     for i in range(sizey - 1):
+#         s += chr(i + 65)
+#     s += "."
+#     perms = [''.join(p) for p in permutations(list(s))]
+#     return perms
 
 # ANSWERS TO QUESTIONS:
 """
 1. 181452
-2. ABCDEFHG. because you cannot swap the H and G without moving the rest. 
+2. ABCDEFHG. because you cannot swap the H and G without moving the rest.
+3. 286
+4. 8672543.1 and 64785.321 both have a path length of 31
 5. 22 steps takes 59 seconds
 """
 
@@ -233,6 +232,7 @@ if __name__ == "__main__":
     path = args[1]
 
     """
+    
     print(modBFS(2) + modBFS(3))
 
     puzzles = generate_puzzles(3) 
@@ -242,15 +242,12 @@ if __name__ == "__main__":
         print(bfs(puzzle, goal, 3), puzzle, goal)
         break # delete this to find all
 
-    a = 0
-    for puzzle in puzzles:
-        a += modBFS2(puzzle, "ABCDEFGH.")
-        if a % 10 == 0:
-            print(puzzle, a)
-    print(a)
+    print(modBFS2("12345678.")[0])
+
+    print(modBFS2("12345678."))
+    
+
     """
-
-
 
     
     with open(path) as fileReader:
