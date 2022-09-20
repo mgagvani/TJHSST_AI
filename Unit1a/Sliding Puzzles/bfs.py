@@ -63,45 +63,95 @@ def swap(sourcei, sourcej, desti, destj, mat, size):
 
 
 def get_children(str, size):
-    mat = to_mat(str, size)
+    # mat = to_mat(str, size)
     children = []
 
     # mat = self.to_matrix()
     # find the dot
 
-    for (i, row) in enumerate(mat):
-        for (j, val) in enumerate(row):
-            if val == '.':
-                di, dj = i, j
-                break
+    # for (i, row) in enumerate(mat):
+    #     for (j, val) in enumerate(row):
+    #         if val == '.':
+    #             di, dj = i, j
+    #             break
+
+    idx = str.find(".")
 
     # horizontal swapping
 
     # print(f"di,dj = ({di},{dj}), value is {mat[di][dj]}")
     # print(mat)
 
-    if dj == 0:  # swap with right neighbour
-        children.append(swap(di, dj, di, dj + 1, mat, size))
-    elif dj == len(mat[0]) - 1:
+    if idx % size == 0:  # swap with right neighbour
+        a = str
+        ch1 = str[idx]
+        ch2 = str[idx + 1]
+        a = a.replace(ch2, '!',) # just a temporary
+        a = a.replace(ch1, ch2)
+        a = a.replace('!', ch1)
+        children.append(a)
+    elif (idx+1) % size == 0:
         # swap with left neighbour
-        children.append(swap(di, dj, di, dj - 1, mat, size))
+        b = str
+        ch1 = str[idx]
+        ch2 = str[idx - 1]
+        b = b.replace(ch2, '!',) # just a temporary
+        b = b.replace(ch1, ch2)
+        b = b.replace('!', ch1)
+        children.append(b)
     else:
-          # swap with both neigubours
-        children.append(swap(di, dj, di, dj + 1, mat, size))
-        children.append(swap(di, dj, di, dj - 1, mat, size))
+        # swap with both neigubours
+        c = str
+        ch1 = str[idx]
+        ch2 = str[idx + 1]
+        c = c.replace(ch2, '!',) # just a temporary
+        c = c.replace(ch1, ch2)
+        c = c.replace('!', ch1)
+        children.append(c)
+        d = str
+        ch1 = str[idx]
+        ch2 = str[idx - 1]
+        d = d.replace(ch2, '!',) # just a temporary
+        d = d.replace(ch1, ch2)
+        d = d.replace('!', ch1)
+        children.append(d)
 
     # vertical swapping
     # print(mat)
 
-    if di == 0:  # swap with below neighbour
-        children.append(swap(di, dj, di + 1, dj, mat, size))
-    elif di == len(mat[0]) - 1:
+    if idx < size:  # swap with below neighbour
+        e = str
+        ch1 = str[idx]
+        ch2 = str[idx + size]
+        e = e.replace(ch2, '!',) # just a temporary
+        e = e.replace(ch1, ch2)
+        e = e.replace('!', ch1)
+        children.append(e)
+    elif idx >= size * (size - 1):
         # swap with above
-        children.append(swap(di, dj, di - 1, dj, mat, size))
+        f = str
+        ch1 = str[idx]
+        ch2 = str[idx - size]
+        f = f.replace(ch2, '!',) # just a temporary
+        f = f.replace(ch1, ch2)
+        f = f.replace('!', ch1)
+        children.append(f)
     else:
           # swap with both neigubours
-        children.append(swap(di, dj, di + 1, dj, mat, size))
-        children.append(swap(di, dj, di - 1, dj, mat, size))
+        g = str
+        ch1 = str[idx]
+        ch2 = str[idx + size]
+        g = g.replace(ch2, '!',) # just a temporary
+        g = g.replace(ch1, ch2)
+        g = g.replace('!', ch1)
+        children.append(g)
+        h = str
+        ch1 = str[idx]
+        ch2 = str[idx - size]
+        h = h.replace(ch2, '!',) # just a temporary
+        h = h.replace(ch1, ch2)
+        h = h.replace('!', ch1)
+        children.append(h)
     return children
 
 
@@ -175,7 +225,7 @@ def generate_puzzles(size):
 """
 1. 181452
 2. ABCDEFHG. because you cannot swap the H and G without moving the rest. 
-5. 20 steps takes 47 seconds
+5. 22 steps takes 59 seconds
 """
 
 if __name__ == "__main__":
