@@ -66,21 +66,60 @@ def generate_graph2(dictionary):
     #         break
     return graph
 
-if __name__ == "__main__":
-    time1 = perf_counter()
-    dictionary = get_dictionary("words_06_letters.txt")
-    graph = generate_graph2(dictionary)
-    print(graph["notion"])
-    time2 = perf_counter()
-    print(f"Time to create dictionary was: {time2-time1} seconds")
-    print(f"There are {len(dictionary)} words in this dictionary. ")
+def backtrace(parent, start, end):
+    path = [end]
+    while path[-1] != start:
+        path.append(parent[path[-1]])
+    return list(reversed(path))
 
-    args = sys.argv
+def bfs(start, goal, graph): 
+    fringe = deque()
+    visited = set()
+    fringe.append((start, 0))
+    visited.add(start)
+    parent = {}
+    while len(fringe) > 0:
+        v, _l = fringe.popleft() # DIS IS PARENT
+        if v == goal:
+            # return v, _l
+            return backtrace(parent, start, goal)
+        # print(_l,v, graph[v]); input()
+        for child in graph[v]:
+            if child not in visited:
+                fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
+                parent[child] = v
+                visited.add(child)
+    return -1
+
+if __name__ == "__main__":
+    args = sys.argv 
     path = args[1]
+    dictPath = args[2]
 
     with open(path) as fileReader:
         line_list = [line.strip() for line in fileReader]
 
+    time1 = perf_counter()
+    dictionary = get_dictionary(dictPath)
+    graph = generate_graph2(dictionary)
+    print(graph["abased"])
+    time2 = perf_counter()
+    print(f"Time to create dictionary was: {time2-time1} seconds")
+    print(f"There are {len(dictionary)} words in this dictionary. ")
+
+    tone = perf_counter()
     for i, line in enumerate(line_list):
         start, goal = line.split(" ")
-        print(f"Start is {start} and goal is {goal}")
+        path = bfs(start, goal, graph)
+        if path == -1:
+            print("NO SOLUTION :(")
+            continue
+        print(f"{i}: Start is {start} and goal is {goal}, pathlength = {len(path)}")
+        for a in path:
+            print(a)
+        print()
+    ttwo = perf_counter()
+
+    print(f"Time to solve all: {ttwo - tone} s")
+        
+
