@@ -91,6 +91,57 @@ def bfs(start, goal, graph):
                 visited.add(child)
     return -1
 
+def modBFS(graph, s):
+    fringe = deque()
+    visited = set()
+    fringe.append((s, 0))
+    visited.add(s)
+    while len(fringe) > 0:
+        v, _l = fringe.popleft() # DIS IS PARENT
+        for child in graph[v]:
+            # print(matstr(to_mat(child, size)))  
+            if child not in visited:
+                fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
+                visited.add(child)
+    return len(visited)
+
+def solve_puzzles(graph):
+    # Problem 1 - 1568
+    count1 = 0
+    l, long = [], []
+    for k,v in graph.items():
+        l.append(modBFS(graph, k))
+        if l[-1] ==1625:
+            long.append(k)
+        if len(v) == 0:
+            count1 += 1
+    print(count1)
+    print(max(l))
+
+    # Problem 2 - 1625
+
+    # Problem 3
+    a = set(l)
+    print(len(a), a, sum(a))
+    # Total clumps > 2: 21
+
+    # Problem 4:
+    longestlen = 0; longestlist = None
+    print(len(long))
+    return
+    for i, word in enumerate(long):
+        for j, word2 in enumerate(long):
+            if i+j % 100 == 0:
+                print(f"[DEBUG] {i} {j}")
+
+            a = bfs(word, word2, graph)
+            if (x:=len(a)) > longestlen:
+                longestlen = x
+                longestlist = a
+                print(longestlen)
+
+    
+
 if __name__ == "__main__":
     args = sys.argv 
     path = args[1]
@@ -121,5 +172,6 @@ if __name__ == "__main__":
     ttwo = perf_counter()
 
     print(f"Time to solve all: {ttwo - tone} s")
-        
+
+    solve_puzzles(graph)        
 
