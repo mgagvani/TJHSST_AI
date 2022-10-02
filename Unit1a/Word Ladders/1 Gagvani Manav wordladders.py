@@ -1,13 +1,14 @@
 import sys
 from collections import deque
 from time import perf_counter
+from turtle import back
 
 def get_dictionary(filePath):
     with open(filePath) as file: # set for o(1) membership
         lines = set([line.strip() for line in file])
     return lines
 
-    [word1[i]==word2[i] for i in range(6)].count(False)==1
+    # [word1[i]==word2[i] for i in range(6)].count(False)==1
 
 def generate_graph(dictionary):
     """
@@ -72,6 +73,13 @@ def backtrace(parent, start, end):
         path.append(parent[path[-1]])
     return list(reversed(path))
 
+def bi_backtrace(parent, bparent, start, goal, middle):
+    # START TO MIDDLE
+    forwardpath = backtrace(parent, start, middle)
+    backwardpath = list(reversed(backtrace(bparent, goal, middle)))[1:]
+    path = forwardpath + backwardpath
+    return path
+
 def bfs(start, goal, graph): 
     fringe = deque()
     visited = set()
@@ -90,6 +98,47 @@ def bfs(start, goal, graph):
                 parent[child] = v
                 visited.add(child)
     return -1
+
+def biBFS(start, goal, graph):
+    """ 
+    Bidirectional BFS. Goes from the sorce and the goal.
+    Maintains separate fringe/visited for each side.  
+    """
+    fringe = deque()
+    visited = set()
+    fringe.append((start, 0))
+    visited.add(start)
+
+    gfringe = deque()
+    gvisited = set()
+    gfringe.append((goal, 0))
+    gvisited.add(goal)
+
+    parent = {}
+    backwards_parent = {}
+
+    while len(fringe) > 0 or len(gfringe) > 0:
+        v, _l = fringe.popleft() # DIS IS PARENT
+        # if v == goal:
+        #     return v, _l
+        for child in graph[v]:
+            if child not in visited:
+                fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
+                parent[child] = v
+                visited.add(child)
+            if child in gvisited: # WE FOUND IT!!!!!
+                return  bi_backtrace(parent, backwards_parent, start, goal, child)
+
+        gv, _gl = gfringe.popleft() # DIS IS PARENT
+        # if gv == goal:
+        #     return gv, _gl
+        for gchild in graph[gv]:
+            if gchild not in gvisited:
+                gfringe.append((gchild, _gl + 1)) # ADD ONE TO PARENT"S LEVEL
+                backwards_parent[gchild] = gv
+                gvisited.add(gchild)
+            if gchild in visited: # WE FOUND IT!!!!!
+                return bi_backtrace(parent, backwards_parent, start,goal, child)
 
 def modBFS(graph, s):
     fringe = deque()
@@ -153,15 +202,15 @@ if __name__ == "__main__":
     time1 = perf_counter()
     dictionary = get_dictionary(dictPath)
     graph = generate_graph2(dictionary)
-    print(graph["abased"])
+    # print(graph["abased"])
     time2 = perf_counter()
-    print(f"Time to create dictionary was: {time2-time1} seconds")
+    print(f"Time to create graph was: {time2-time1} seconds")
     print(f"There are {len(dictionary)} words in this dictionary. ")
 
     tone = perf_counter()
     for i, line in enumerate(line_list):
         start, goal = line.split(" ")
-        path = bfs(start, goal, graph)
+        path = biBFS(start, goal, graph)
         if path == -1:
             print("NO SOLUTION :(")
             continue
@@ -173,5 +222,5 @@ if __name__ == "__main__":
 
     print(f"Time to solve all: {ttwo - tone} s")
 
-    solve_puzzles(graph)        
+    # solve_puzzles(graph)        
 

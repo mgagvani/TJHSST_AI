@@ -169,6 +169,46 @@ def bfs(start, goal, size): # pass in strings!! (and the size of the string)
                 visited.add(child)
     return -1
 
+def biBFS(start, goal, size):
+    """ 
+    Bidirectional BFS. Goes from the sorce and the goal.
+    Maintains separate fringe/visited for each side.  
+    """
+    fringe = deque()
+    visited = set()
+    fringe.append((start, 0))
+    visited.add(start)
+
+    gfringe = deque()
+    gvisited = set()
+    gfringe.append((goal, 0))
+    gvisited.add(goal)
+
+    parent = {}
+
+    while len(fringe) > 0 or len(gfringe) > 0:
+        v, _l = fringe.popleft() # DIS IS PARENT
+        # if v == goal:
+        #     return v, _l
+        for child in get_children(v, size):
+            if child not in visited:
+                fringe.append((child, _l + 1)) # ADD ONE TO PARENT"S LEVEL
+                parent[child] = v
+                visited.add(child)
+                if child in gvisited: # WE FOUND IT!!!!!
+                    return  v, _l
+
+        gv, _gl = gfringe.popleft() # DIS IS PARENT
+        # if gv == goal:
+        #     return gv, _gl
+        for gchild in get_children(gv, size):
+            if gchild not in gvisited:
+                gfringe.append((gchild, _gl + 1)) # ADD ONE TO PARENT"S LEVEL
+                gvisited.add(gchild)
+                if gchild in visited: # WE FOUND IT!!!!!
+                    return gv, _gl
+
+
 def modBFS(size):
     if size == 2:
         s = "123."
@@ -262,10 +302,23 @@ if __name__ == "__main__":
         b = time.perf_counter()
 
         _found, level = bfs(start, goal, size)
+        ba = time.perf_counter()
+        _found, l = biBFS(start, goal, size)
+        bb = time.perf_counter()
         # steps = backtrack(goal, parents, start)
 
         c = time.perf_counter()
-        print(f"Line {i}: {to_str(start)}, {level} moves found in {c-b} seconds")
+        print(f"[BFS] Line {i}: {to_str(start)}, {level} moves found in {ba-b} seconds")
+        print(f"[BiBFS] Line {i}: {to_str(start)}, {level} moves found in {bb - ba} seconds")
+        # print((ba-b)/(bb-ba))
     
         
 
+"""
+Bidirectional BFS answers:
+1. For the small 2x2 puzzles, BiBFS is around 1 to 3 times as fast. For the larger puzzles it is around 10-100 times as fast.
+2. BiBFS bogs down at 42 puzzles (BFS is 22). 
+3. There is not much of a speed gain with BiBFS for Word Ladders, in general it is 20-50% faster.
+
+5. Bidirectional BFS is most useful as an alternative to BFS when there are large graphs. Going further, when a graph is generated on the spot, Bidirectional BFS is helpful since it reduces the amount of vertices which need to be created. On small graphs BiBFS is not helpful since BFS is generally already fast enough. 
+"""
