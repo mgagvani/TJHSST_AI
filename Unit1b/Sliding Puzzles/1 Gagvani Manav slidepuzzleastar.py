@@ -1,6 +1,6 @@
 import sys
 import time
-from collections import deque
+from fibheap import *
 from heapq import heappush, heappop, heapify
 
 r"""
@@ -199,6 +199,22 @@ def astar(start, goal, size):
                     heappush(fringe, temp)
     return -1
 
+def new_astar(start, goal, size):
+    closed = set()
+    start_node = (taxicab(start, goal, size), start, 0) # this tuple structure is a "node"
+    fringe = makefheap() # heap
+    fheappush(fringe, start_node)
+    while fringe.num_nodes > 0:
+        v = fheappop(fringe)
+        if v[1] == goal:
+            return v # well something more will come here later
+        if v[1] not in closed:
+            closed.add(v[1])
+            for child in get_children(v[1], size):
+                if child not in closed:
+                    temp = (v[2]+1+taxicab(child, goal, size),child, v[2]+1)
+                    fheappush(fringe, temp)
+    return -1
 
 if __name__ == "__main__":
     args = sys.argv
@@ -212,7 +228,7 @@ if __name__ == "__main__":
         a = time.perf_counter()
 
         if parity_check(start, size):
-            _info = astar(start, find_goal(start), size)
+            _info = new_astar(start, find_goal(start), size)
         else:
             _info = ("no solution determined",)
 
