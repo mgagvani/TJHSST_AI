@@ -1,6 +1,5 @@
 import sys
 import time
-from fibheap import *
 from heapq import heappush, heappop, heapify
 
 r"""
@@ -179,7 +178,8 @@ def taxicab(current, goal, size):
             goali, goalj = goal_positions[val]
             dy, dx = abs(goali - i), abs(goalj - j)
             total += (dy + dx)
-    return total
+    return total, goal_positions
+
 
 def astar(start, goal, size):
     closed = set()
@@ -199,21 +199,48 @@ def astar(start, goal, size):
                     heappush(fringe, temp)
     return -1
 
+def taxicab_new(current, goal_positions, size):
+    currmat = to_mat(current, size)
+    total = 0
+
+    for (i, row) in enumerate(currmat):
+        for (j, val) in enumerate(row):
+            if val == ".":
+                continue # SKIP THE DOT
+            goali, goalj = goal_positions[val]
+            dy, dx = abs(goali - i), abs(goalj - j)
+            total += (dy + dx)
+    return total
+
+def taxicab_new2(current, goal_positions, size):
+    total = 0
+    for a, val in enumerate(current):
+        if val == ".": continue
+        j = a%size; i = (a-j)//4
+        goali, goalj = goal_positions[val]
+        dy, dx = abs(goali - i), abs(goalj - j)
+        total += (dy + dx)
+    return total
+
+
 def new_astar(start, goal, size):
+    # calculate initial taxicab
+    initial, goal_positions = taxicab(start, goal, size)
+    # A-Star
     closed = set()
-    start_node = (taxicab(start, goal, size), start, 0) # this tuple structure is a "node"
-    fringe = makefheap() # heap
-    fheappush(fringe, start_node)
-    while fringe.num_nodes > 0:
-        v = fheappop(fringe)
+    start_node = (initial, start, 0) # this tuple structure is a "node"
+    fringe = [] # heap
+    heappush(fringe, start_node)
+    while len(fringe) > 0:
+        v = heappop(fringe)
         if v[1] == goal:
             return v # well something more will come here later
         if v[1] not in closed:
             closed.add(v[1])
             for child in get_children(v[1], size):
                 if child not in closed:
-                    temp = (v[2]+1+taxicab(child, goal, size),child, v[2]+1)
-                    fheappush(fringe, temp)
+                    temp = (v[2]+1+taxicab_new2(child, goal_positions, size),child, v[2]+1)
+                    heappush(fringe, temp)
     return -1
 
 if __name__ == "__main__":
