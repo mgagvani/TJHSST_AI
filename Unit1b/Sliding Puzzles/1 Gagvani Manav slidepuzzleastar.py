@@ -20,6 +20,9 @@ def to_mat(str, size):
             mat[-1].append(str[i * size + j])
     return mat
 
+def to_mat2(s, n):
+    return list(map(list, zip(*[map(str, s)] * n)))
+
 def to_str(mat):
     s = ''
     for row in mat:
@@ -53,6 +56,7 @@ def swap(sourcei, sourcej, desti, destj, mat, size):
     
 
 
+# def get_children(str, size, curr_taxicab, goal_positions):
 def get_children(str, size):
     children = []
     idx = str.find(".")
@@ -65,6 +69,7 @@ def get_children(str, size):
         a = a.replace(ch2, '!',) # just a temporary
         a = a.replace(ch1, ch2)
         a = a.replace('!', ch1)
+        # TODO add incremental taxicab calculation
         children.append(a)
     elif (idx+1) % size == 0:
         # swap with left neighbour
@@ -200,7 +205,7 @@ def astar(start, goal, size):
     return -1
 
 def taxicab_new(current, goal_positions, size):
-    currmat = to_mat(current, size)
+    currmat = to_mat2(current, size)
     total = 0
 
     for (i, row) in enumerate(currmat):
