@@ -95,21 +95,19 @@ if __name__ == "__main__":
 
 
 """
+This is the state as represented by cubestate:
 TOP BOTTOM LEFT RIGHT FRONT BACK (0 1 2 3 4 5)
 
-flip up: (new arrangement)
-
+NEW ARRANGEMENTS:
+flip up: 
 BACK FRONT LEFT RIGHT BOTTOM TOP (5 4 2 3 1 0)
 
 flip down:
-
 FRONT BACK LEFT RIGHT BOTTOM TOP (4 5 2 3 1 0)
 
 flip left:
-
 RIGHT LEFT TOP BOTTOM FRONT BACK (3 2 0 1 4 5)
 
 flip right:
-
 LEFT RIGHT BOTTOM TOP FRONT BACK (2 3 1 0 4 5)
 """

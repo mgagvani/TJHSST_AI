@@ -193,8 +193,8 @@ def solve_puzzles(graph):
 
 if __name__ == "__main__":
     args = sys.argv 
-    path = args[1]
-    dictPath = args[2]
+    path = args[2]
+    dictPath = args[1]
 
     with open(path) as fileReader:
         line_list = [line.strip() for line in fileReader]
