@@ -192,17 +192,19 @@ def solve_puzzles(graph):
     # Problem 4 v2
     print(len(long), "len long"); 
     max_now = -1
+    b = "drafty"
     for i,a in enumerate(long):
-        for j, b in enumerate(long):
-            if a != b:
-                currlen = len(bfs(a, b, graph))
-                # print(currlen, max_now)
-                if currlen > max_now:
-                    max_now = currlen
-                    print(max_now, " currmax")
-                # if (i) % 500 == 0 or (j) % 500 == 0:
-                #     print(f"debug {i} {j}")
-
+        if a != b:
+            curr= bfs(a, b, graph)
+            currlen = len(curr)
+            # print(currlen, max_now)
+            if currlen > max_now:
+                max_now = currlen
+                print(max_now, " currmax", f'{a} to {b}')
+            if currlen == 28:
+                print(curr)
+            # if (i) % 500 == 0 or (j) % 500 == 0:
+            #     print(f"debug {i} {j}")
     # 450 and 28 (right answers)
     
 
@@ -222,7 +224,7 @@ if __name__ == "__main__":
     print(f"Time to create graph was: {time2-time1} seconds")
     print(f"There are {len(dictionary)} words in this dictionary. ")
 
-    solve_puzzles()
+    solve_puzzles(graph)
 
     tone = perf_counter()
     for i, line in enumerate(line_list):

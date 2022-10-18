@@ -62,3 +62,11 @@ if __name__ == "__main__":
         b = perf_counter()
 
         print(solution, test_solution(solution), b-a, "seconds")
+
+'''
+COPY 2D ARRAY
+n_ls = [x.copy() for x in ls]
+
+CCOPY DICT OF LISTS
+e = {x : d[x].copy() for x in d}
+'''
