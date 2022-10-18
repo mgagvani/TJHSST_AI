@@ -1,10 +1,10 @@
 import sys
-import heapq
 from collections import deque
 from time import perf_counter
+from heapq import heappush, heappop, heapify
 
 def swap(cubestate, boardstate, idx, movement):
-    c = list(cubestate)
+    c = cubestate
     if movement == "up":
         newcube = c[5] + c[4] + c[3] + c[2] + c[1] + c[0]
     elif movement == "down":
@@ -24,15 +24,52 @@ def swap(cubestate, boardstate, idx, movement):
     newboardstate = list(boardstate)
     newboardstate[idx] = temp
     newboardstate = "".join(newboardstate)
-    return newcubestate, newboardstate, idx
+    return newboardstate, newcubestate, idx
+'''
+def generateGraph():
+    """
+    Note: Cubestate here is in the form 012345 (string) and is agnostic of where the paint is. 
+    """
+    # generate all permutations of a string
+    from itertools import permutations
+    perms = set(["".join(p) for p in permutations("012345")])
+    graph = {}
+    for c in perms:
+        up, down, left, right = c[5] + c[4] + c[3] + c[2] + c[1] + c[0], c[4] + c[5] + c[2] + c[3] + c[1] + c[0], c[3] + c[2] + c[0] + c[1] + c[4] + c[5], c[2] + c[3] + c[1] + c[0] + c[4] + c[5]
+        graph[c] = (up, down, left, right)
+    return graph
 
+def getChildren2(boardstate, cube_occupancy, cube_arrangement, cubeidx, size, graph):
+    new_arrangements = graph[cube_arrangement]
+    new_occupancies = []
+    for arrangement in new_arrangements:
+        _a = []
+        for i, str_idx in enumerate(arrangement):
+            _a[int(str_idx)] = cube_occupancy[i]
+        new_occupancies.append(_a)
 
-def getChildren(case, cubestate):
-    size = int(case[0])
-    numsquares = size ** 2
+    # transfer from board to cube, (creating new board states)
+    new_boards = []
+    newidxs = {0: cubeidx-size, 1: cubeidx+size, 2: cubeidx-1, 3: cubeidx+1}
+    for i, occupancy in enumerate(new_occupancies):
+        # up, down, left, right
+        if occupancy[1] == boardstate[newidxs[i]]:
+            new_boards.append(boardstate)
+        else:
+            # have to swap
+            a = occupancy[1]
+            b = boardstate[newidxs[i]]
+            occupancy[1] = b
+            x = list(boardstate); x[newidxs[i]] = a
+            new_boards.append("".join(x))
+    return list(zip(new_arrangements, new_boards, new_occupancies))
+    
+'''
+
+def getChildren(boardstate, cubestate, cubeidx, size):
+    # print(boardstate, cubestate, cubeidx, size)
+    cubeidx = int(cubeidx)
     children = [] # child structure ("board state", "cube state") TOP BOTTOM LEFT RIGHT FRONT BACK
-    cubeidx = int(case[2])
-    boardstate = case[1] 
     # print(cubeidx, size)
     # horiz swapping
     if cubeidx % size == 0:       # swap with right neighbour
@@ -75,12 +112,33 @@ def bfs(case): # pass in strings!! (and the size of the string)
         v, _l = fringe.popleft() # DIS IS PARENT
         if goaltest(v[1]):
             return v, _l
-        for child in getChildren(case, v[1]):
-            print(child)
+        for child in getChildren(v[0], v[1], v[2], int(case[0])): # case is (size, puzzle, idx, ___)
             if child not in visited:
                 newNode = (child[1], child[0], child[2])
                 fringe.append((newNode, _l + 1)) # ADD ONE TO PARENT"S LEVEL
                 visited.add(newNode)
+    return -1
+
+def heuristic(boardstate):
+    return boardstate.count('@')
+
+def astar(case):
+    closed = set()
+    start_node = (heuristic(case[1]), (case[1], "......", case[2],), 0,) # this tuple structure is a "node"
+    size = int(case[0])
+    fringe = [] # heap
+    heapify(fringe)
+    heappush(fringe, start_node)
+    while len(fringe) > 0:
+        v = heappop(fringe)
+        if goaltest(v[1][1]):
+            return v # well something more will come here later
+        if v[1] not in closed:
+            closed.add(v[1])
+            for child in getChildren(v[1][0], v[1][1], v[1][2], size):
+                if child not in closed:
+                    temp = (v[2]+1+heuristic(v[1][0]),child, v[2]+1,)
+                    heappush(fringe, temp)
     return -1
     
 
@@ -89,8 +147,14 @@ if __name__ == "__main__":
     with open(file) as f:
         cases = [line.strip().split(" ") for line in f]
 
+    # graph = generateGraph()
+    # print(graph["012345"] , graph["320145"])
+
     for i, case in enumerate(cases):
-        print(bfs(case))
+        a = perf_counter()
+        _answer = astar(case)
+        b = perf_counter()
+        print(f"{_answer} in {b-a} seconds")
 
 
 

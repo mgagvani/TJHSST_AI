@@ -3,8 +3,8 @@ import time
 from collections import deque
 
 def load_string(line):
-    size, pstr = line.split()
-    size = int(size)
+    pstr = line
+    size = int(len(pstr)**0.5)
     return size, pstr
 
 def to_mat(str, size):

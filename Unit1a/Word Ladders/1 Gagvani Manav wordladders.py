@@ -210,7 +210,7 @@ if __name__ == "__main__":
     tone = perf_counter()
     for i, line in enumerate(line_list):
         start, goal = line.split(" ")
-        path = biBFS(start, goal, graph)
+        path = bfs(start, goal, graph)
         if path == -1:
             print("NO SOLUTION :(")
             continue
