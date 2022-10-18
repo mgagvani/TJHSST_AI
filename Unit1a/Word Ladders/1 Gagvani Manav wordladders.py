@@ -177,18 +177,33 @@ def solve_puzzles(graph):
     # Problem 4:
     longestlen = 0; longestlist = None
     print(len(long))
-    return
-    for i, word in enumerate(long):
-        for j, word2 in enumerate(long):
-            if i+j % 100 == 0:
-                print(f"[DEBUG] {i} {j}")
+    # return
+    # for i, word in enumerate(long):
+    #     for j, word2 in enumerate(long):
+    #         if i+j % 100 == 0:
+    #             print(f"[DEBUG] {i} {j}")
+ 
+    #         a = bfs(word, word2, graph)
+    #         if (x:=len(a)) > longestlen:
+    #             longestlen = x
+    #             longestlist = a
+    #             print(longestlen)
 
-            a = bfs(word, word2, graph)
-            if (x:=len(a)) > longestlen:
-                longestlen = x
-                longestlist = a
-                print(longestlen)
+    # Problem 4 v2
+    print(len(long), "len long"); 
+    max_now = -1
+    for i,a in enumerate(long):
+        for j, b in enumerate(long):
+            if a != b:
+                currlen = len(bfs(a, b, graph))
+                # print(currlen, max_now)
+                if currlen > max_now:
+                    max_now = currlen
+                    print(max_now, " currmax")
+                # if (i) % 500 == 0 or (j) % 500 == 0:
+                #     print(f"debug {i} {j}")
 
+    # 450 and 28 (right answers)
     
 
 if __name__ == "__main__":
@@ -206,6 +221,8 @@ if __name__ == "__main__":
     time2 = perf_counter()
     print(f"Time to create graph was: {time2-time1} seconds")
     print(f"There are {len(dictionary)} words in this dictionary. ")
+
+    solve_puzzles()
 
     tone = perf_counter()
     for i, line in enumerate(line_list):
