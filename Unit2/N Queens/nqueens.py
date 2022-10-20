@@ -54,14 +54,15 @@ def test_solution(state):
     return True
 
 if __name__ == "__main__":
-    for i in range(8, 25):
+    sizes = (8,17,18,29,30,31,32)
+    for i in sizes:
         state = [None for _b in range(i)]
 
         a =  perf_counter()
         solution = nqueens_backtracking(state)
         b = perf_counter()
 
-        print(solution, test_solution(solution), b-a, "seconds")
+        print(i, solution, test_solution(solution), b-a, "seconds")
 
 '''
 COPY 2D ARRAY
