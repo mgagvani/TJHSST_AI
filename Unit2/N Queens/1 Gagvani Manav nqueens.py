@@ -137,6 +137,7 @@ def change_conflicts(col, row, val):
     row_conflicts[row] += val
     diagr_conflicts[col + row] += val
     diagl_conflicts[col + (size - row - 1)] += val
+    totalConflicts = sum(diagl_conflicts) + sum(diagr_conflicts) + sum(row_conflicts)
 
 def min_conflict_pos(col):
     minConflicts = size
@@ -195,7 +196,6 @@ def create_minimized_board():
         change_conflicts(col, board[col], 1)
 
     totalConflicts = sum(diagl_conflicts) + sum(diagr_conflicts) + sum(row_conflicts)
-
     print(f"Conflicts: {totalConflicts} conflicts")
 
 
@@ -211,16 +211,17 @@ def max_conflict_col():
             elif conflicts == maxConflicts:
                     maxConflictCols.append(col)
     choice = random.choice(maxConflictCols)
-    print(f"curr max conflicts: {maxConflicts}")
     return choice, maxConflicts
 
 
 def nqueens_iterative3():
     create_minimized_board()
+    print("FINISHED MINIMIZED BOARD")
     iteration, maxIteration = 0, size
 
     while (iteration < maxIteration): # so that it doesnt go forever
         col, numConflicts = max_conflict_col()
+        print(numConflicts)
         if (numConflicts > 3): # cannot swap if there are only 2 bc infinte loop
             newLocation = min_conflict_pos(col)
             if (newLocation != board[col]):
@@ -251,7 +252,7 @@ def test_solution(state):
 
 if __name__ == "__main__":
     start = perf_counter()
-    sizes = (19, 23, 29, 43, 49, 97)
+    sizes = (8,)# (19, 23, 29, 43, 49, 97)
     # sizes = [a for a in range(15, 30, 4)]
     # sizes.append(31)
     # sizes.append(51)
