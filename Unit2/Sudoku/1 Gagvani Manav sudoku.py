@@ -141,7 +141,7 @@ def get_sorted_values2(dictionary, ind):
     return dictionary[ind]
 
 
-def get_next_unassigned_variable(state, possible, ones):
+def get_next_unassigned_variable(possible, ones):
     """
     now it chooses the index with the minimum possible choices - most constrained
     """
@@ -186,51 +186,61 @@ def populate(puzzle):
 
 
 def constraint_propagation(state, dict):
+    state_list = list(state)
     for box in range(N):
-        objects = [state[index] for index in boxToInd[box]]
+        objects = [state_list[index] for index in boxToInd[box]]
         for symbol in symbol_set:
             if symbol not in objects:
                 present = [symbol in dict[index] for index in boxToInd[box]]
-                if present.count(True) == 0:
+                c = present.count(True)
+                if c == 0:
                     return None, None
-                if present.count(True) == 1:
+                elif c == 1:
                     idx = boxToInd[box][present.index(True)]
-                    state = state[:idx] + symbol + state[idx + 1 :]
+                    # state = state[:idx] + symbol + state[idx + 1 :]
+                    state_list[idx] = symbol
                     dict[idx] = ""
     for row in range(N):
-        objects = [state[index] for index in range(N * row, N * (row + 1))]
+        objects = [state_list[index] for index in range(N * row, N * (row + 1))]
         for symbol in symbol_set:
             if symbol not in objects:
                 present = [
                     symbol in dict[index] for index in range(N * row, N * row + N)
                 ]
-                if present.count(True) == 0:
+                c = present.count(True)
+                if c == 0:
                     return None, None
-                if present.count(True) == 1:
+                elif c == 1:
                     idx = row * N + present.index(True)
-                    state = state[:idx] + symbol + state[idx + 1 :]
+                    # state = state[:idx] + symbol + state[idx + 1 :]
+                    state_list[idx] = symbol
                     dict[idx] = ""
     for col in range(N):
         for row in range(N):
-            objects = [state[index] for index in range(col, N**2 + col, N)]
+            objects = [state_list[index] for index in range(col, N**2 + col, N)]
             for symbol in symbol_set:
                 if symbol not in objects:
                     present = [
                         symbol in dict[index] for index in range(col, N**2 + col, N)
                     ]
-                    if present.count(True) == 0:
+                    c = present.count(True)
+                    if c == 0:
                         return None, None
-                    if present.count(True) == 1:
+                    elif c == 1:
                         idx = col + N * present.index(True)
-                        state = state[:idx] + symbol + state[idx + 1 :]
+                        # state = state[:idx] + symbol + state[idx + 1 :]
+                        state_list[idx] = symbol
                         dict[idx] = ""
-    return state, dict
+    newstate = "".join(state_list)
+    # assert (state == newstate)
+    return newstate, dict
 
 
 def csp_backtracking2(state, dict_constraint, ones):
     """
     backtracking with forward looking and constraint propagation
     """
+    # print(ones)
     if "." not in state:
         return state
     if len(ones) == 0:
@@ -240,14 +250,13 @@ def csp_backtracking2(state, dict_constraint, ones):
         if "." not in state:
             return state
 
-    idx = get_next_unassigned_variable(state, dict_constraint, ones)
+    idx = get_next_unassigned_variable(dict_constraint, ones)
     for symbol in get_sorted_values2(dict_constraint, idx):
         new_state = state[:idx] + symbol + state[idx + 1 :]
         new_dict = dict_constraint.copy()
         new_dict[idx] = ""
         new_dict, new_ones = forward_look(new_dict, idx, symbol, ones.copy())
         if new_dict is not None:
-
             result = csp_backtracking2(new_state, new_dict, new_ones)
             if result is not None:
                 return result
