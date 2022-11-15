@@ -147,7 +147,7 @@ def get_next_unassigned_variable(possible, ones):
     """
     _len = len
     if _len(ones) > 0:
-        return ones.pop()
+        return ones.pop() # this removes a random one
     minNum = 100
     minInd = -1
     for index in range(N**2):
@@ -232,6 +232,7 @@ def constraint_propagation(state, dict):
                         state_list[idx] = symbol
                         dict[idx] = ""
     newstate = "".join(state_list)
+    # TODO add forward looking right here
     # assert (state == newstate)
     return newstate, dict
 
@@ -243,6 +244,9 @@ def csp_backtracking2(state, dict_constraint, ones):
     # print(ones)
     if "." not in state:
         return state
+    # do forward looking
+    # print(ones, state)
+    # input()
     if len(ones) == 0:
         state, dict_constraint = constraint_propagation(state, dict_constraint)
         if dict_constraint is None:

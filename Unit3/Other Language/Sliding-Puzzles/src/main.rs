@@ -10,7 +10,7 @@ use std::cmp::Reverse;
 
 use itertools::Itertools;
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Hash, Eq, PartialEq, Debug)]
 struct Node {
     heuristic: u32,
     state: Vec<char>,
@@ -29,11 +29,76 @@ fn print_type<T>(_: &T) {
 
 fn goal_test(current: &Vec<char>, goal: &Vec<char>) -> bool {
     for (idx, value) in current.iter().enumerate() {
-        if goal[idx] != value {
-            false
+        if goal[idx] != *value {
+            return false;
         }
     }
-    true
+    return true;
+}
+
+fn get_children(state: &Vec<char>, s: u8) -> Vec<Vec<char>>{
+    let mut children = Vec::new();
+    let idx = state.iter().position(|&x| x == '.').unwrap() as usize;
+    let size = s as usize;
+    let ch1 = state[idx];
+
+    // horizontal swapping
+    if idx % size == 0 {
+        let mut a = state.clone().to_vec();
+        let ch2 = a[idx + 1];
+        a[idx] = ch2;
+        a[idx + 1] = ch1;
+        children.push(a);
+    }
+    else if (idx+1) % size == 0 {
+        let mut b = state.clone().to_vec();
+        let ch2 = b[idx - 1];
+        b[idx] = ch2;
+        b[idx - 1] = ch1;
+        children.push(b);
+    }
+    else {
+        let mut c = state.clone().to_vec();
+        let mut ch2 = c[idx + 1];
+        c[idx] = ch2;
+        c[idx + 1] = ch1;
+        children.push(c);
+        let mut d = state.clone().to_vec();
+        ch2 = d[idx - 1];
+        d[idx] = ch2;
+        d[idx - 1] = ch1;
+        children.push(d);
+    }
+
+    // vertical swapping
+    if idx < size {
+        let mut e = state.clone().to_vec();
+        let ch2 = e[idx + size];
+        e[idx] = ch2;
+        e[idx + size] = ch1;
+        children.push(e);
+    }
+    else if idx >= (size * (size - 1)) {
+        let mut f = state.clone().to_vec();
+        let ch2 = f[idx - size];
+        f[idx] = ch2;
+        f[idx - size] = ch1;
+        children.push(f);
+    }
+    else {
+        let mut g = state.clone().to_vec();
+        let mut ch2 = g[idx + size];
+        g[idx] = ch2;
+        g[idx + size] = ch1;
+        children.push(g);
+        let mut h = state.clone().to_vec();
+        ch2 = h[idx - size];
+        h[idx] = ch2;
+        h[idx - size] = ch1;
+        children.push(h);
+    }
+    return children;
+
 }
 
 fn abs(num: i8) -> u8 {
@@ -76,17 +141,19 @@ fn taxicab(current: &Vec<char>, goal: &Vec<char>, size: u8) -> u32 {
     let mut goal_positions = HashMap::new();
     let mut total = 0;
 
-        for (idx, value) in goal.iter().enumerate() {
+    for (idx, value) in goal.iter().enumerate() {
         if *value == '.' {
             continue;
         }
-        goal_positions.entry(*value).or_insert(arr2mat(idx.try_into().unwrap(), size));
+        // goal_positions.entry(*value).or_insert(arr2mat(idx.try_into().unwrap(), size));
+        goal_positions.insert(*value, arr2mat(idx.try_into().unwrap(), size));
     }
-
+    println!("goal positions: {:?}", goal_positions);
     for (idx, value) in current.iter().enumerate() {
         if *value == '.' {
             continue;
         }
+        println!("value requested: {}", value);
         let goali = goal_positions.get(value).unwrap().i;
         let goalj = goal_positions.get(value).unwrap().j;
         
@@ -102,19 +169,28 @@ fn taxicab(current: &Vec<char>, goal: &Vec<char>, size: u8) -> u32 {
     total
 }
 
-fn astar(start: &Vec<char>, goal: &Vec<size>, size) {
+fn astar(start: &Vec<char>, goal: &Vec<char>, size: u8) {
     let mut closed = HashSet::new();
-    let start_node = Node{taxicab(&start, &goal, size), start, 0};
+    let start_node = Node{heuristic: taxicab(&start, &goal, size), state: (*start.clone()).to_vec(), depth: 0};
     let mut fringe = BinaryHeap::new();
     fringe.push(Reverse(start_node));
     while !fringe.is_empty() {
-        let v = fringe.pop();
-        if goal_test(&v.state, &goal) {
-            println!("result, depth: {} {}", &v.state, &v.depth);
+        let v = fringe.pop().unwrap().0;
+        let state_current = &v.state.clone().to_vec();
+        println!("result, depth: {:?} {:?}", state_current.to_owned(), &v.depth);
+        if goal_test(&state_current.to_owned(), &goal) {
+            println!("ANSWER: result, depth: {:#?} {:#?}", state_current.to_owned(), &v.depth);
+            return;
         }
-        if !closed.contains(&v.state) {
-            closed.insert(&v.state);
-            // TODO GET CHILDREN
+        if !closed.contains(&state_current.to_owned()) {
+            closed.insert(state_current.to_owned());
+            for child in get_children(state_current, size).iter() {
+                if !closed.contains(&(*child.clone()).to_vec()) {
+                    let t1 = 1 + v.depth + taxicab(&child, &goal, size);
+                    let temp = Node{heuristic: t1, state: (*child.clone()).to_vec(), depth: v.depth+1};
+                    fringe.push(Reverse(temp));
+                } 
+            }
         }
     }
 }
@@ -209,21 +285,25 @@ fn main() {
     // println!("With text:\n{contents}");
 
     let lines = contents.lines(); // iterator, use .next()
-
+    
     for line in lines {
-        // println!("{}", line);
+        println!("original: {:?}", line);
         let mut _chars_iter = line.chars(); // .nth(trim().parse().unwrap();
         let _char_size =  _chars_iter.next().unwrap();
         let size: u8 = _char_size as u8 - '0' as u8;
         // println!("{:?}", size);
         let goal = find_goal(line);
         // println!("goal {:?}", goal);
-        let parity = parity_check(line, size);
+        // let _parity = parity_check(line, size);
         // println!("parity: {}", parity);
-        let mut vec = str_to_vec(line);
+        let vec = str_to_vec(line);
         astar(&vec, &goal, size);
+        // let children = get_children(&vec, size);
+        // println!("children: {:?}", children);
         // println!("taxicab: {}", taxicab);
+        // break;
     }
+    
 
     // print_type(&contents);
 }
