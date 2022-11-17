@@ -2,6 +2,8 @@ import sys
 from time import perf_counter
 from collections import deque
 
+BOARD = "........."
+
 def game_over0(board):
     axes = [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]
     return any("".join(board[p] for p in axis) in ["XXX","OOO"] for axis in axes)
@@ -165,28 +167,118 @@ x_move:
 """
 
 states = []
+moves = 0
 def o_move(board):
+    global moves
     if game_over3a(board):
-        states.append(board)
+        mcount = 9-list(board).count(".")
+        states.append((board, str(game_over2a(board))+str(mcount)))
         return
-    moves = all_possible_moves(board, "O")
-    for nboard in moves:
+    amoves = all_possible_moves(board, "O")
+    moves += 1
+    for nboard in amoves:
         x_move(nboard)
 
 def x_move(board):
+    global moves
     if game_over3a(board):
-        states.append(board)
+        mcount = 9-list(board).count(".")
+        states.append((board, str(game_over2a(board))+str(mcount)))
         return
-    moves = all_possible_moves(board, "X")
-    for nboard in moves:
+    amoves = all_possible_moves(board, "X")
+    moves += 1
+    for nboard in amoves:
         o_move(nboard)
 
-# 255168
-# 958
-
-if __name__ == "__main__":
-    board = "........."
-    print_board(board)
+def generate_stats(board):
     x_move(board)
     print(len(states))
     print(len(set(states)))
+    results = {}
+    for state in states:
+        board, key = state[0], state[1]
+        if key not in results.keys():
+            results[key] = 1
+        else:
+            results[key] += 1
+    for key in results.keys():
+        print(key, results[key])
+    print(sum(results.values()))
+
+# 255168
+# 958
+# X5 - 120
+# X7 - 444
+# X9 - 62
+# O6 - 148
+# O8 - 168
+# DRAW - 16
+
+# 1 means X won, 0 means draw, -1 means O won
+
+def generate_score(board):
+    if (x:=game_over2a(board)) == 'X':
+        return 1
+    elif x == 'O':
+        return -1
+    else:
+        return 0
+
+def get_player(c):
+    if c == 'X':
+        return 'O'
+    elif c == 'O':
+        return "X"
+    else:
+        raise NameError("bro come on its not even the right name")
+
+def min_step(board, c):
+    if game_over3a(board):
+        return (generate_score(board), board)
+    results = []
+    for next_board in all_possible_moves(board, c):
+        results.append((max_step(next_board, get_player(c))[0], next_board))
+    return sorted(results)[0]
+
+def max_step(board, c):
+    if game_over3a(board):
+        return (generate_score(board), board)
+    results = []
+    for next_board in all_possible_moves(board, c):
+        results.append((min_step(next_board, get_player(c))[0], next_board))
+    return sorted(results, reverse=True)[0]
+
+def human_move(board, curr):
+    print_board(board)
+    available = [i for i, ltr in enumerate(board) if ltr == '.']
+    print(f"Available indices: {available}")
+    index = input(f"Which index do you want to place a {curr} on? (0-8) ")
+    while index not in available:
+        index = input(f"Come on give me something valid: ")
+    lboard = list(board)
+    lboard[index] = curr
+    return "".join(lboard)
+
+def ai_move(board, curr):
+    if curr == 'X':
+        expected, board = max_step(board, curr)
+    elif curr == 'O':
+        expected, board = max_step(board, curr)
+    else:
+        raise ValueError("Bro what is this")
+    human_move(board, get_player(board))
+
+
+
+if __name__ == "__main__":
+    # board = "........."
+    board = "XX..OOO.."
+    print_board(board)
+    curr = 'O'
+    print()
+    print_board(max_step(board, curr)[1])
+
+    
+    
+
+
