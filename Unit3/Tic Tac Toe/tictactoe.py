@@ -122,6 +122,15 @@ def all_possible_moves(board, current):
         moves.add("".join(_list))
     return moves
 
+def all_possible_moves2(board, current):
+    dot_indices = [i for i, ltr in enumerate(board) if ltr == '.']
+    moves = set()
+    for index in dot_indices:
+        _list = list(board)
+        _list[index] = current
+        moves.add(("".join(_list), index))
+    return moves
+
 def generate_all_states(start):
     fringe = deque()
     visited = set()
@@ -232,51 +241,116 @@ def get_player(c):
     else:
         raise NameError("bro come on its not even the right name")
 
+def explain_ai(idx, a, c):
+    if a == 1 and c == 'X':
+        winner = True
+        draw = False
+    elif a == -1 and c == 'O':
+        winner = True
+        draw = False
+    elif a == 1 and c == 'O':
+        winner = False
+        draw = False
+    elif a == -1 and c == 'X':
+        winner = draw = False
+    elif a == 0:
+        winner = False
+        draw = True
+    else:
+        raise ConnectionAbortedError("something bad happened and this message should get your attention")
+    if draw:
+        ret = "draw"
+    elif winner:
+        ret = "win"
+    else:
+        ret = "loss"
+    # print(f"Moving at {idx} results in a {ret}")
+
 def min_step(board, c):
     if game_over3a(board):
         return (generate_score(board), board)
     results = []
-    for next_board in all_possible_moves(board, c):
-        results.append((max_step(next_board, get_player(c))[0], next_board))
+    for next_board, idx in all_possible_moves2(board, c):
+        a = max_step(next_board, get_player(c))[0]
+        explain_ai(idx, a, c)
+        results.append((a, next_board))
     return sorted(results)[0]
 
 def max_step(board, c):
     if game_over3a(board):
         return (generate_score(board), board)
     results = []
-    for next_board in all_possible_moves(board, c):
-        results.append((min_step(next_board, get_player(c))[0], next_board))
+    for next_board, idx in all_possible_moves2(board, c):
+        a = min_step(next_board, get_player(c))[0]
+        explain_ai(idx, a, c)
+        results.append((a, next_board))
     return sorted(results, reverse=True)[0]
 
 def human_move(board, curr):
     print_board(board)
     available = [i for i, ltr in enumerate(board) if ltr == '.']
+    if len(available) == 0 or game_over3a(board):
+        return board
     print(f"Available indices: {available}")
-    index = input(f"Which index do you want to place a {curr} on? (0-8) ")
+    index = int(input(f"Which index do you want to place a {curr} on? (0-8) "))
     while index not in available:
-        index = input(f"Come on give me something valid: ")
+        index = int(input(f"Come on give me something valid: "))
     lboard = list(board)
     lboard[index] = curr
+    print()
     return "".join(lboard)
 
 def ai_move(board, curr):
     if curr == 'X':
-        expected, board = max_step(board, curr)
+        _expected, board = max_step(board, curr)
     elif curr == 'O':
-        expected, board = max_step(board, curr)
+        _expected, board = min_step(board, curr)
     else:
         raise ValueError("Bro what is this")
-    human_move(board, get_player(board))
+    print()
+    return board
 
+def play_game():
+    _in = input("Should I be X or O? ").upper()
+    if _in == 'X':
+        curr = 'X'
+        aifirst = True
+    else:
+        curr = 'O'
+        aifirst = False
+    
+    board = "........."
+    while '.' in board:
+        if aifirst:
+            board = ai_move(board, curr)
+            curr = get_player(curr)
+            board = human_move(board, curr)
+            curr = get_player(curr)
+        else:
+            board = human_move(board, curr)
+            curr = get_player(curr)
+            board = ai_move(board, curr)
+            curr = get_player(curr)
 
+        # check game over:
+        if (win:=game_over2a(board)):
+            print(f"{win} wins! 🏆")
+            return
+    
+    print_board(board)
+
+    
 
 if __name__ == "__main__":
     # board = "........."
-    board = "XX..OOO.."
+    '''
+    board = ".X....O.."
     print_board(board)
-    curr = 'O'
+    curr = 'X'
     print()
     print_board(max_step(board, curr)[1])
+    '''
+    play_game()
 
     
     
