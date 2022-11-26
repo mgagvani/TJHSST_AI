@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::BinaryHeap;
 use std::cmp::Reverse;
+use std::time::Instant;
 
 use itertools::Itertools;
 
@@ -148,12 +149,12 @@ fn taxicab(current: &Vec<char>, goal: &Vec<char>, size: u8) -> u32 {
         // goal_positions.entry(*value).or_insert(arr2mat(idx.try_into().unwrap(), size));
         goal_positions.insert(*value, arr2mat(idx.try_into().unwrap(), size));
     }
-    println!("goal positions: {:?}", goal_positions);
+    // println!("goal positions: {:?}", goal_positions);
     for (idx, value) in current.iter().enumerate() {
         if *value == '.' {
             continue;
         }
-        println!("value requested: {}", value);
+        // println!("value requested: {}", value);
         let goali = goal_positions.get(value).unwrap().i;
         let goalj = goal_positions.get(value).unwrap().j;
         
@@ -177,9 +178,9 @@ fn astar(start: &Vec<char>, goal: &Vec<char>, size: u8) {
     while !fringe.is_empty() {
         let v = fringe.pop().unwrap().0;
         let state_current = &v.state.clone().to_vec();
-        println!("result, depth: {:?} {:?}", state_current.to_owned(), &v.depth);
+        // println!("result, depth: {:?} {:?}", state_current.to_owned(), &v.depth);
         if goal_test(&state_current.to_owned(), &goal) {
-            println!("ANSWER: result, depth: {:#?} {:#?}", state_current.to_owned(), &v.depth);
+            println!("ANSWER: result, depth: {:?} {:#?}", state_current.to_owned(), &v.depth);
             return;
         }
         if !closed.contains(&state_current.to_owned()) {
@@ -297,7 +298,11 @@ fn main() {
         // let _parity = parity_check(line, size);
         // println!("parity: {}", parity);
         let vec = str_to_vec(line);
+
+        let now = Instant::now();
         astar(&vec, &goal, size);
+        let elapsed = now.elapsed();
+        println!("Elapsed: {:.2?}", elapsed);
         // let children = get_children(&vec, size);
         // println!("children: {:?}", children);
         // println!("taxicab: {}", taxicab);

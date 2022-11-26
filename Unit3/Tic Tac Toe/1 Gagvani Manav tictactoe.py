@@ -241,49 +241,55 @@ def get_player(c):
     else:
         raise NameError("bro come on its not even the right name")
 
-def explain_ai(idx, a, c):
-    if a == 1 and c == 'X':
-        winner = True
-        draw = False
-    elif a == -1 and c == 'O':
-        winner = True
-        draw = False
-    elif a == 1 and c == 'O':
-        winner = False
-        draw = False
-    elif a == -1 and c == 'X':
-        winner = draw = False
-    elif a == 0:
-        winner = False
-        draw = True
-    else:
-        raise ConnectionAbortedError("something bad happened and this message should get your attention")
-    if draw:
-        ret = "draw"
-    elif winner:
-        ret = "win"
-    else:
-        ret = "loss"
-    # print(f"Moving at {idx} results in a {ret}")
+def explain_ai(dict):
+    for idx, val in dict.items():
+        a, c = val
+        if a == 1 and c == 'X':
+            winner = True
+            draw = False
+        elif a == -1 and c == 'O':
+            winner = True
+            draw = False
+        elif a == 1 and c == 'O':
+            winner = False
+            draw = False
+        elif a == -1 and c == 'X':
+            winner = draw = False
+        elif a == 0:
+            winner = False
+            draw = True
+        else:
+            raise NotImplementedError("something bad happened and this message should get your attention")
+        if draw:
+            ret = "draw"
+        elif winner:
+            ret = "win"
+        else:
+            ret = "loss"
+        print(f"Moving at {idx} results in a {ret}.")
 
 def min_step(board, c):
     if game_over3a(board):
         return (generate_score(board), board)
     results = []
+    info = {}
     for next_board, idx in all_possible_moves2(board, c):
         a = max_step(next_board, get_player(c))[0]
-        explain_ai(idx, a, c)
+        info[idx] = (a, c)
         results.append((a, next_board))
+    # explain_ai(info)
     return sorted(results)[0]
 
 def max_step(board, c):
     if game_over3a(board):
         return (generate_score(board), board)
     results = []
+    info = {}
     for next_board, idx in all_possible_moves2(board, c):
         a = min_step(next_board, get_player(c))[0]
-        explain_ai(idx, a, c)
+        info[idx] = (a, c)
         results.append((a, next_board))
+    # explain_ai(info)
     return sorted(results, reverse=True)[0]
 
 def human_move(board, curr):
@@ -300,26 +306,62 @@ def human_move(board, curr):
     print()
     return "".join(lboard)
 
+def explain_ai2(board, func, curr):
+    outcomes = []
+    idxs = []
+    # print(func)
+    for next_board, idx in all_possible_moves2(board, curr):
+        outcomes.append(func(next_board, curr)[0])
+        idxs.append(idx)
+    # print(outcomes)
+    # print(idxs)
+    c = curr
+    for i, a in enumerate(outcomes):
+        if a == 1 and c == 'X':
+            winner = True
+            draw = False
+        elif a == -1 and c == 'O':
+            winner = True
+            draw = False
+        elif a == 1 and c == 'O':
+            winner = False
+            draw = False
+        elif a == -1 and c == 'X':
+            winner = draw = False
+        elif a == 0:
+            winner = False
+            draw = True
+        else:
+            raise NotImplementedError("something bad happened and this message should get your attention")
+        if draw:
+            ret = "draw"
+        elif winner:
+            ret = "win"
+        else:
+            ret = "loss"
+        print(f"Moving at {idxs[i]} results in a {ret}.")
+
 def ai_move(board, curr):
     if curr == 'X':
         _expected, board = max_step(board, curr)
+        explain_ai2(board, min_step, curr)
     elif curr == 'O':
         _expected, board = min_step(board, curr)
+        explain_ai2(board, max_step, curr)
     else:
-        raise ValueError("Bro what is this")
+        raise ValueError("Invalid Value for Character")
     print()
     return board
 
-def play_game():
+def play_game(board):
     _in = input("Should I be X or O? ").upper()
     if _in == 'X':
         curr = 'X'
         aifirst = True
     else:
-        curr = 'O'
+        curr = 'X'
         aifirst = False
     
-    board = "........."
     while '.' in board:
         if aifirst:
             board = ai_move(board, curr)
@@ -334,6 +376,9 @@ def play_game():
 
         # check game over:
         if (win:=game_over2a(board)):
+            if win == "~DRAW":
+                print("Game is a draw.")
+                return
             print(f"{win} wins! 🏆")
             return
     
@@ -350,7 +395,7 @@ if __name__ == "__main__":
     print()
     print_board(max_step(board, curr)[1])
     '''
-    play_game()
+    play_game(sys.argv[1])
 
     
     
