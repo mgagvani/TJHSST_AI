@@ -1,0 +1,17 @@
+Other Language Report - Manav Gagvani
+
+I chose to use Rust as the new language. To get familiar with the language, I first followed a tutorial I found online
+which stepped me through the basic data types, functions, and other features of Rust. In general, as someone who does
+know C++, Rust seems like an interesting combination of Python and C++ in that it's compiled, but the types are not explicitly
+defined in the program. Once I actually started implementing the Sliding Puzzles code, I mostly used the Rust documentation and 
+other online sources (mostly for things like the min heap, hashed set, and hashed map). Overall, it wasn't too difficult to learn 
+Rust, but it did require a lot of time to really get the hang of Rust's extremely strict type safety and data types.
+
+My Rust code is around 2-4 times as fast as my Python code. I think a future version of AI using Rust would be a bit worse than it 
+is currently using Python, mostly because not many people know it already and it is missing a lot of the built-in features Python
+has. For example, it doesn't have a sorting function or an absolute value function like Python's. You also need to have a bit of
+knowledge about build systems and compilers to be productive with Rust, otherwise people would have to learn all of that in class. 
+Most TJ students know Python from Foundations, and they know C++ from Design&Tech, so those would probably be better alternative
+languages for AI. Also, since AI focuses a lot on the algorithms being implemented, Rust would detract from that because of the 
+super strict type safety (you can't add together an uint8 with an uint32, for example.) Code would be a lot harder to read compared
+to Python.
