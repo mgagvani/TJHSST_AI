@@ -354,13 +354,20 @@ def ai_move(board, curr):
     return board
 
 def play_game(board):
-    _in = input("Should I be X or O? ").upper()
-    if _in == 'X':
-        curr = 'X'
+    if board.count(".") != 9:
         aifirst = True
-    else:
-        curr = 'X'
-        aifirst = False
+        if board.count("X") == board.count("O"):
+            curr = 'X'
+        else:
+            curr = 'O'
+    else:       
+        _in = input("Should I be X or O? ").upper()
+        if _in == 'X':
+            curr = 'X'
+            aifirst = True
+        else:
+            curr = 'X'
+            aifirst = False
     
     while '.' in board:
         if aifirst:

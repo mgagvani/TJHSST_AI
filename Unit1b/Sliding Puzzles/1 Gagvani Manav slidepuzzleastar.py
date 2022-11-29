@@ -248,6 +248,32 @@ def new_astar(start, goal, size):
                     heappush(fringe, temp)
     return -1
 
+# NOTE: not working
+def bi_astar(start, goal, size):
+    initcost, goal_positions = taxicab(start, goal, size)
+    frontier = [[], []]
+    start_node1 = (initcost, start, 0)
+    start_node2 = (initcost, goal, 0)
+    heappush(frontier[0], start_node1)
+    heappush(frontier[1], start_node2)
+    sets = [{start}, {goal}]
+    usestartorgoal = [start, goal]
+    explored = [{start : (0, [start])}, {goal : (0, [goal])}]
+    alternate = 1
+    while len(frontier[0]) > 0 and len(frontier[1]) > 0:
+        alternate = 1 - alternate
+        v = heappop(frontier[alternate])
+        sets[alternate] = sets[alternate] - {v}
+        if v in sets[1 - alternate]:
+            return v
+        for child in get_children(v[1], size):
+            if child not in explored[alternate]:
+                f = taxicab(child, usestartorgoal[1 - alternate], size)[0]
+                print(type(v[2]), type(f))
+                heappush(frontier[alternate], (v[2]+1+f, child, v[2]+1))
+                sets[alternate].add(child)
+                explored[alternate][child] = (v[2]+1+f, explored[alternate][v][1])
+
 if __name__ == "__main__":
     args = sys.argv
     path = args[1]
@@ -260,7 +286,7 @@ if __name__ == "__main__":
         a = time.perf_counter()
 
         if parity_check(start, size):
-            _info = new_astar(start, find_goal(start), size)
+            _info = bi_astar(start, find_goal(start), size)
         else:
             _info = ("no solution determined",)
 

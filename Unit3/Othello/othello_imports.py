@@ -56,13 +56,21 @@ def getValidMoves(board, tile):
                 validMoves.append(y * HEIGHT + x)
     return validMoves
 
-def possible_moves(board, token):
+def possible_moves0(board, token):
     return set(getValidMoves(board, token))
 
+def eight2ten_board(board):
+    mat = to_mat2(board, 8)
+    mat.append(0, list("??????????"))
+    for row in mat:
+        row.append(0, "?")
+        row.append("?")
+    mat.append(list("??????????"))
 
-def possible_moves0(board, token):
+def possible_moves(board, token):
+    # TODO ACCEPT A 100 CHARACTER STRING!!!!!!!!!!!!!!!
     """
-    accepts a 64 char string and a single character (either x or o)
+    accepts a 100 char string and a single character (either x or o)
     """
     opponent = "xo"["ox".index(token)]
     directions = [-11, -10, -9, -1, 1, 9, 10, 11]
@@ -77,6 +85,7 @@ def possible_moves0(board, token):
                 if new == 100:
                     continue
                 if new == EMPTY and opposite == token:
+                    print(f"trigger one {idx + dir} {idx - dir} {idx} {dir}")
                     moves.append(idx + dir)
                 elif opposite == token:
                     visited = []
@@ -87,6 +96,7 @@ def possible_moves0(board, token):
                     while -1 < newIdx < 64 and board[newIdx] == tk:
                         newIdx += dir
                         visited.append(newIdx)
+                    print(f"trigger chain {newIdx} {idx - dir} {idx} {dir}")
                     moves.append(newIdx)
                 else:
                     pass # do not process pieces in the middle of a chain
