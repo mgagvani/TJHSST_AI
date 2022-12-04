@@ -1,6 +1,7 @@
 import sys
 import time
 from heapq import heappush, heappop, heapify
+from collections import deque
 
 r"""
 Run Command:
@@ -227,6 +228,10 @@ def taxicab_new2(current, goal_positions, size):
         total += (dy + dx)
     return total
 
+def normalize(g, f):
+    if g < 5:
+        return 1
+    return 2
 
 def new_astar(start, goal, size):
     # calculate initial taxicab
@@ -244,9 +249,42 @@ def new_astar(start, goal, size):
             closed.add(v[1])
             for child in get_children(v[1], size):
                 if child not in closed:
-                    temp = (v[2]+1+taxicab_new2(child, goal_positions, size),child, v[2]+1)
+                    # print(normalize(v[2], v[0]))
+                    temp = (v[2]+1+taxicab_new2(child, goal_positions, size)*normalize(v[2], v[0]),child, v[2]+1)
                     heappush(fringe, temp)
     return -1
+
+def id_astar(start, goal, size):
+    bound = taxicab(start, goal, size)[0]
+    path = [start]
+    while True:
+        t = search(path, 0, bound, size, goal)
+        if t == "found":
+            return bound, goal
+        if t == float("inf"):
+            return "n/a", goal
+        # print(t)
+        bound = t
+
+def search(path, g, bound ,size, goal):
+    node = path[-1]
+    f = g + taxicab(node, goal, size)[0]
+    if f > bound:
+        return f
+    if node == goal:
+        return "found"
+    min = float("inf")
+    for child in get_children(node, size):
+        if child not in path:
+            path.append(child)
+            t = search(path, g+taxicab(child, goal, size)[0]+1, bound, size, goal)
+            if t == "found":
+                return "found"
+            # print(t, min)
+            if t < min:
+                min = t
+            path.pop()
+    return min
 
 # NOTE: not working
 def bi_astar(start, goal, size):
@@ -277,7 +315,12 @@ def bi_astar(start, goal, size):
 if __name__ == "__main__":
     args = sys.argv
     path = args[1]
+    if "korf100" in path:
+        korfformat = True
+    else:
+        korfformat = False
 
+    time0 = time.perf_counter()
     with open(path) as fileReader:
         line_list = [line.strip() for line in fileReader]
 
@@ -285,12 +328,21 @@ if __name__ == "__main__":
         size, start = load_string(line)
         a = time.perf_counter()
 
-        if parity_check(start, size):
-            _info = bi_astar(start, find_goal(start), size)
+        if korfformat:
+            goal = ".ABCDEFGHIJKLMNO"
+            _info = new_astar(start, goal, size)
         else:
-            _info = ("no solution determined",)
+            goal = find_goal(start)
+            if parity_check(start, size):
+                _info = new_astar(start, goal, size)
+            else:
+                _info = ("no solution determined",)
 
 
         b = time.perf_counter()
     
-        print(f"Line {i}: {start}, {_info[0]} moves in {b-a} s")
+        # print(f"Line {i}: {start}, {int(_info[0])} moves in {b-a} s")
+        if i != 0:
+            print(f"{_info[0]/i}")
+    time1 = time.perf_counter()
+    print(f"Total time: {time1-time0} s")
