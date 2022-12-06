@@ -371,6 +371,83 @@ def make_move(board, token, index):
 
 
 def score(board):
+    if board.count(EMPTY) == 0: # if the board is full
+        score = (((board.count("x") - board.count("o"))) * 99999999999999999999999999)  # return a very high score 
+        return score
+
+    score = 0
+    corner = [0, 0, 0, 7, 7, 7, 56, 56, 56, 63, 63, 63]
+    next_to_corner = {1, 8, 9, 6, 14, 15, 48, 49, 57, 54, 55, 62} # set introduces some randomness?? nvm
+    edge = [2, 3, 4, 5, 16, 24, 32, 40, 58, 59, 60, 61, 23, 31, 39, 47]
+    two_away = {16, 23, 40, 47} 
+
+    empty = board.count(EMPTY)
+    if empty > 32: 
+        score += sum((len(possible_moves(board, "x")), len(possible_moves(board, "o")))) * 5000 * (64 - empty) # value more if there are more empty squares
+
+    for corn in corner: # value corners a lot
+        if(board[corn] == 'o'):
+            score -= 1000000
+        elif(board[corn] == 'x'):
+            score += 1000000
+    
+    for num in two_away: 
+        if(board[num] == 'x'):
+            score += 40000
+        elif(board[num] == 'o'):
+            score -= 40000
+
+    for edge in edge: # value edges more
+        if(board[edge] == 'o'): 
+            score -= 60000
+        elif(board[edge] == 'x'):
+            score += 60000
+
+    for next_corn, corn_check in zip(next_to_corner, corner): # this is basically a dictionary
+        if(board[next_corn] == 'x' and board[corn_check] == EMPTY): # if the next to corner is x and the corner is empty
+            score -= 275000
+        elif(board[next_corn] == 'x' and board[corn_check] == 'x'):
+            score += 275000
+        elif(board[next_corn] == 'o' and board[corn_check] == EMPTY):
+            score += 275000
+        elif(board[next_corn] == 'o' and board[corn_check] == 'o'): # if the next to corner is o and the corner is also o
+            score -= 275000
+
+    for i in range(0, 56, 7): # check for 2 in a row
+        string_check = board[i:i + 8]
+
+        if(string_check.count('x') >= 7):
+            score += 100000
+        elif(string_check.count('o') >= 7):
+            score -= 100000
+    
+    for i in range(0, 8): # check 2nd
+        string_check = board[i:64:8] 
+
+        if(string_check.count('x') >= 7):
+            score += 100000
+        elif(string_check.count('o') >= 7):
+            score -= 100000
+
+    diag_1 = board[0:64:9] 
+    diag_2 = board[7:57:7] 
+
+    if(diag_1.count('x') >= 7):
+        score += 100000
+    elif(diag_1.count('o') >= 7):
+        score -= 100000
+    
+    if(diag_2.count('x') >= 7):
+        score += 100000 
+    elif(diag_2.count('o') >= 7):
+        score -= 100000
+
+    poss_to_move = len(possible_moves(board, 'x')) # value the number of possible moves
+    poss_to_move_2 = len(possible_moves(board, 'o'))
+
+    score += (poss_to_move - poss_to_move_2) * 10000 * empty # value more if there are more possible moves (mobility)
+    return score
+    '''
     if board.count(EMPTY) == 0:
         return (board.count("x") - board.count("o")) * 100000000000
     # return board.count("x") - board.count("o")    
@@ -409,14 +486,16 @@ def score(board):
     # num pieces
     score += board.count("x") - board.count("o")
     return score
+    '''
 
 
 
 def game_over(board):
     moves = (len(possible_moves(board, "x")), len(possible_moves(board, "o")))
-    if sum(moves) == 0:
-        return True
-    return False
+    # if sum(moves) == 0:
+    #     return True
+    # return False
+    return not sum(moves)
 
 
 def minimax(board, current_player, depth, a, b):
