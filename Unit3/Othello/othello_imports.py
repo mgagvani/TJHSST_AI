@@ -2,6 +2,7 @@
 # Manav Gagvani
 import sys
 
+
 EMPTY = "."
 WIDTH = 8
 HEIGHT = 8
@@ -382,8 +383,21 @@ def score(board):
     two_away = {16, 23, 40, 47} 
 
     empty = board.count(EMPTY)
+    xcount = board.count("x")
+    ocount = board.count("o")
     if empty > 32: 
         score += sum((len(possible_moves(board, "x")), len(possible_moves(board, "o")))) * 5000 * (64 - empty) # value more if there are more empty squares
+    # elif empty < 8: # prioritize having more pieces than the opponent in the endgame
+    if xcount > ocount:
+        proportion = board.count("x") / board.count("o")
+        # print("score impact: ", 10 ** (int(proportion)), proportion)
+        score += 20 ** (int(proportion))
+    elif ocount > xcount:
+        proportion = board.count("o") / board.count("x")
+        # print("score impact: ", 10 ** (int(proportion)), proportion)
+        score -= 20 ** (int(proportion))
+    else:
+        pass # score does not change if they are tied
 
     for corn in corner: # value corners a lot
         if(board[corn] == 'o'):
@@ -498,7 +512,7 @@ def game_over(board):
     return not sum(moves)
 
 
-def minimax(board, current_player, depth, a, b):
+def minimax0(board, current_player, depth, a, b):
     if (
         depth == 0 # end of iterating
         or game_over(board) 
@@ -536,6 +550,51 @@ def minimax(board, current_player, depth, a, b):
     
     else:
         return ValueError("current_player must be x or o")
+
+def minimax(board, current_player, depth, a, b):
+    if (
+        depth == 0 # end of iterating
+        or game_over(board) 
+        or len(possible_moves(board, current_player)) == 0 # no moves available
+    ):
+        return score(board)
+
+    available_indices = possible_moves(board, current_player)
+
+    if current_player == "x":
+        value = float("-inf")
+        for idx in available_indices:
+            new_board = make_move(board, "x", idx)
+
+            # Negascout search logic:
+            if value == a:
+                value = max(value, minimax(new_board, "o", depth - 1, value, value + 1))
+            else:
+                value = max(value, minimax(new_board, "o", depth - 1, a, b))
+
+            # Update alpha and beta values:
+            a = max(a, value)
+            # b = min(b, value)
+
+        return value
+
+    elif current_player == "o":
+        value = float("inf")
+        for idx in available_indices:
+            new_board = make_move(board, "o", idx)
+
+            # Negascout search logic:
+            if value == b:
+                value = min(value, minimax(new_board, "x", depth - 1, value - 1, value))
+            else:
+                value = min(value, minimax(new_board, "x", depth - 1, a, b))
+
+            # Update alpha and beta values:
+            # a = max(a, value)
+            b = min(b, value)
+
+        return value
+    
     
 
 
