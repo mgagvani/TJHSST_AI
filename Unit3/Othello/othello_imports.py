@@ -372,6 +372,20 @@ def make_move(board, token, index):
 
 
 def score(board):
+    # to win against random, emphasize mobility in early stages
+    # and number of tokens gained in later stages
+    # currently is not good - we should apply these principles to the new one
+    if board.count(EMPTY) == 0: # if the board is full
+        score = (((board.count("x") - board.count("o"))) * 99999999999999999999999999)  # return a very high score
+        return score
+    if board.count(EMPTY) > 32:
+        score = ((board.count("x") - board.count("o")) * 1)
+        score += sum((len(possible_moves(board, "x")), len(possible_moves(board, "o")))) * 10
+        return score
+    else:  # value tokens gained
+        score = ((board.count("x") - board.count("o")) * 10)
+        return score
+    '''
     if board.count(EMPTY) == 0: # if the board is full
         score = (((board.count("x") - board.count("o"))) * 99999999999999999999999999)  # return a very high score 
         return score
@@ -461,6 +475,7 @@ def score(board):
 
     score += (poss_to_move - poss_to_move_2) * 10000 * empty # value more if there are more possible moves (mobility)
     return score
+    '''
     '''
     if board.count(EMPTY) == 0:
         return (board.count("x") - board.count("o")) * 100000000000
@@ -605,7 +620,7 @@ def find_next_move(board, player, depth):
 
     if player == "x":
         moves = [
-            (minimax(make_move(board, player, i), "o", depth, a, b), i)
+            (minimax0(make_move(board, player, i), "o", depth, a, b), i)
             for i in (possible_moves(board, player))
         ]
         print(moves)
@@ -613,7 +628,7 @@ def find_next_move(board, player, depth):
 
     elif player == "o":
         moves = [
-            (minimax(make_move(board, player, i), "x", depth, a, b), i)
+            (minimax0(make_move(board, player, i), "x", depth, a, b), i)
             for i in (possible_moves(board, player))
         ]
         print(moves)
