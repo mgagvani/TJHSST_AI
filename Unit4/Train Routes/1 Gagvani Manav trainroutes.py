@@ -6,8 +6,6 @@ from math import pi, acos, sin, cos
 from heapq import heappush, heappop, _heappop_max, heapify
 from tkinter import *
 
-
-
 def calcd(y1, x1, y2, x2):
     """'
     y1 = lat1, x1 = long1
@@ -95,14 +93,15 @@ def draw_line(canvas, y1, x1, y2, x2, col, line_width=1):
     except Exception as e:
         print("Tkinter error: ")
         print(e)
-        # just let it happen ig
+        sys.exit(1)
 
 
 def draw_final_path(ROOT, canvas, path, graph, col="green"):
+    # print(path)
     for p in range(len(path) - 1):
         draw_line(canvas, *graph[5][path[p]], *graph[5][path[p + 1]], col, 5)
         ROOT.update()
-    sleep(0.5) # pause for 0.5 sec
+    sleep(5) # pause for 5 sec
     ROOT.quit() # close the window
 
 
@@ -117,6 +116,8 @@ def draw_all_edges(ROOT, canvas, graph):
 def dijkstra(start, goal, graph):
     ROOT = Tk()  # creates new tkinter window
     ROOT.title(f"Dijikstra - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
     canvas = Canvas(ROOT, background="black")  # sets background color
     draw_all_edges(ROOT, canvas, graph)
     counter = 0
@@ -151,6 +152,8 @@ def dijkstra(start, goal, graph):
 def dijkstra_dfs(start, goal, graph):
     ROOT = Tk()  # creates new tkinter window
     ROOT.title(f"Dijikstra DFS - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
     canvas = Canvas(ROOT, background="black")  # sets background color
     draw_all_edges(ROOT, canvas, graph)
     counter = 0
@@ -182,12 +185,94 @@ def dijkstra_dfs(start, goal, graph):
             ROOT.update()
     return None, None
 
+def bidirectional_dijkstra(start, goal, graph):
+    ROOT = Tk()  # creates new tkinter window
+    ROOT.title(f"Bidirectional Dijikstra - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
+    canvas = Canvas(ROOT, background="black")  # sets background color
+    draw_all_edges(ROOT, canvas, graph)
+    # Create dictionaries to store the cost and path of the visited nodes for both directions
+    closed_start = {start: (0, [start])}
+    closed_goal = {goal: (0, [goal])}
+
+    # Create heaps to store the nodes that still need to be visited for both directions
+    fringe_start = [(0, start, [start])]
+    fringe_goal = [(0, goal, [goal])]
+
+    # Create a set to store nodes that have been visited in both directions
+    intersect = set()
+
+    counter = 0
+
+    while len(fringe_start) > 0 and len(fringe_goal) > 0:
+        # Pop the node with the smallest cost from the start heap
+        v_start = heappop(fringe_start)
+        # If the node has been visited from the other direction, return the path and cost
+        if v_start[1] in closed_goal:
+            print("found thru start")
+            # path = v_start[2] + list(reversed(closed_goal[v_start[1]][1]))
+            path = v_start[2] + list(reversed(closed_goal[v_start[1]][1][1:]))
+            cost = v_start[0] + closed_goal[v_start[1]][0]
+            draw_final_path(ROOT, canvas, path, graph)
+            ROOT.destroy()
+            return path, cost
+        intersect.add(v_start[1])
+
+        # Iterate over the children of the node
+        for child in graph[3][v_start[1]]:
+            if child in intersect:
+                continue
+            cost = closed_start[v_start[1]][0] + graph[4][(v_start[1], child)]
+            if child not in closed_start or closed_start[child][0] > cost:
+                heappush(fringe_start, (cost, child, v_start[2] + [child]))
+                closed_start[child] = (cost, v_start[2] + [child])
+                draw_line(canvas, *graph[5][v_start[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+
+
+        # Pop the node with the smallest cost from the goal heap
+        v_goal = heappop(fringe_goal)
+        # If the node has been visited from the other direction, return the path and cost
+        if v_goal[1] in closed_start:
+            # print("found thru goal")
+            path = v_goal[2] + list(reversed(closed_start[v_goal[1]][1])) # + list(reversed(v_goal[2][1:]))
+            # print(v_goal[2], closed_start[v_start[1]][1])
+            # path = closed_start[v_start[1]][1][1:] + v_goal[2]
+            cost = v_goal[0] + closed_start[v_goal[1]][0]
+            draw_final_path(ROOT, canvas, path, graph)
+            ROOT.destroy()
+            return path, cost
+        intersect.add(v_goal[1])
+
+        # Iterate over the children of the node
+        for child in graph[3][v_goal[1]]:
+            if child in intersect:
+                continue
+            cost = closed_goal[v_goal[1]][0] + graph[4][(v_goal[1], child)]
+            if child not in closed_goal or closed_goal[child][0] > cost:
+                heappush(fringe_goal, (cost, child, v_goal[2] + [child]))
+                closed_goal[child] = (cost, v_goal[2] + [child])
+                draw_line(canvas, *graph[5][v_goal[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+
+
+        # Increment the counter and check if it is divisible by 6000
+        counter += 1
+        if counter % 2000 == 0:
+            # Update the Tkinter window
+            ROOT.update()
+
+    # If the loop ends without finding the goal node, return None, None
+    return None, None
+
+
 def a_star(
     start, goal, graph, heuristic=dist_heuristic
 ):  # incase we want to change heuristic later
 
     ROOT = Tk()  # creates new tkinter window
     ROOT.title(f"A* - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
     canvas = Canvas(ROOT, background="black")  # sets background color
     draw_all_edges(ROOT, canvas, graph)
 
@@ -218,6 +303,44 @@ def a_star(
             ROOT.update()
     return None, None
 
+def reverse_a_star(
+    start, goal, graph, heuristic=dist_heuristic
+):  # incase we want to change heuristic later
+
+    ROOT = Tk()  # creates new tkinter window
+    ROOT.title(f"Reverse A* - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
+    canvas = Canvas(ROOT, background="black")  # sets background color
+    draw_all_edges(ROOT, canvas, graph)
+
+    counter = 0
+
+    fringe = []
+    costs = heuristic(start, goal, graph)
+    closed = {start: (0, [start])}  # closed set is keys
+    heappush(fringe, (costs, start, [start]))
+    while len(fringe) > 0:
+        v = _heappop_max(fringe) # pick the WORST node
+        if v[1] == goal:
+            path, cost = closed[v[1]][1], v[0]
+            draw_final_path(ROOT, canvas, path, graph)
+            ROOT.destroy()
+            # print("path: ", path)
+            # print("path length: ", len(path))
+            return path, cost
+        for child in graph[3][v[1]]:
+            cost = closed[v[1]][0] + graph[4][(v[1], child)]
+            if child not in closed or closed[child][0] > cost:
+                cost2 = heuristic(child, goal, graph)
+                heappush(fringe, (cost + cost2, child, v[2] + [child]))
+                closed[child] = (cost, v[2] + [child])
+                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+        counter += 1
+        if counter % 2000 == 0:
+            ROOT.update()
+    return None, None
+
 
 def main():
     """
@@ -229,6 +352,13 @@ def main():
     4: (node id, node id): edge cost
     5: scaled coordinates
     """
+    SEARCHES = {
+    "1": (dijkstra, "Dijikstra"),
+    "2": (bidirectional_dijkstra, "Bidirectional Dijikstra"),
+    "3": (dijkstra_dfs, "Dijikstra DFS"),
+    "4": (a_star, "A*"),
+    "5": (reverse_a_star, "Reverse A*"),
+    }
     if len(sys.argv) > 1:
         start, goal = sys.argv[1], sys.argv[2]
     else:
@@ -246,25 +376,19 @@ def main():
     #             print(k, v)
     print(f"Time to create graph: {(perf_counter() - cur_time)}")
 
+    # Get the search from user input
+    search = input("Search type (1: Dijikstra, 2: Bidirectional Dijikstra, 3: Dijikstra DFS, 4: A*, 5: Reverse A*): ")
+    if search not in SEARCHES:
+        raise NameError(f"Invalid search type ({search})")
+    search, name = SEARCHES[search]
+    # Run the search
     cur_time = perf_counter()
-    path, cost_0 = dijkstra(graph[2][start], graph[2][goal], graph)
+    path, cost = search(graph[2][start], graph[2][goal], graph)
     print(
-        f"{start} to {goal} with Dijkstra: {cost_0} in {(perf_counter() - cur_time)} seconds."
+        f"{start} to {goal} with {name}: {cost} in {(perf_counter() - cur_time)} seconds."
     )
 
-    cur_time = perf_counter()
-    path, cost_1 = a_star(graph[2][start], graph[2][goal], graph)
-    print(
-        f"{start} to {goal} with A*: {cost_1} in {(perf_counter() - cur_time)} seconds."
-    )
-
-    # cur_time = perf_counter()
-    # path, cost_2 = dijkstra_dfs(graph[2][start], graph[2][goal], graph)
-    # print(
-    #     f"{start} to {goal} with Dijikstra DFS: {cost_1} in {(perf_counter() - cur_time)} seconds."
-    # )
-
-    assert cost_0 == cost_1  # sanity check
+    # assert cost_0 == cost_1  # sanity check
 
 
 if __name__ == "__main__":
