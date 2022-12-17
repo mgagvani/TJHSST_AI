@@ -185,6 +185,53 @@ def dijkstra_dfs(start, goal, graph):
             ROOT.update()
     return None, None
 
+def dijkstra_Kdfs(start, goal, graph, depth, ROOT, canvas):
+    draw_all_edges(ROOT, canvas, graph)
+    counter = 0
+
+    fringe = []
+    closed = {start: (0, [start])}
+    heappush(
+        fringe, (0, start, [start])
+    )  # we still use a heap but we only need to store the cost and the node, not the heuristic
+    while len(fringe) > 0:
+        v = heappop(fringe)
+        if v[1] == goal:
+            path, cost = closed[v[1]][1], v[0]
+            draw_final_path(ROOT, canvas, path, graph)
+            ROOT.destroy()
+            return path, cost
+        # print(v[0], depth)
+        if v[0] < depth:
+            for child in graph[3][v[1]]:
+                cost = (
+                    closed[v[1]][0] + graph[4][(v[1], child)]
+                )  # cost is the cost of the parent + the cost of the edge
+                if child not in closed or closed[child][0] > cost:
+                    heappush(fringe, (cost, child, v[2] + [child]))
+                    closed[child] = (cost, v[2] + [child])
+                    draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+        counter += 1
+        if counter % (depth * 2) == 0:
+            ROOT.update()
+    return None, None
+
+def dijikstra_iddfs(start, goal, graph):
+    INCR = dist_heuristic(start, goal, graph) // 2
+    ROOT = Tk()  # creates new tkinter window
+    ROOT.title(f"Dijikstra ID-DFS - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
+    canvas = Canvas(ROOT, background="black")  # sets background color
+
+    max_depth = INCR
+    result = (None, None)
+    while result[0] == None:
+        print(max_depth)
+        result = dijkstra_Kdfs(start, goal, graph, max_depth, ROOT, canvas)
+        max_depth += INCR # increase the max depth by 100 each iteration
+    return result
+
 def bidirectional_dijkstra(start, goal, graph):
     ROOT = Tk()  # creates new tkinter window
     ROOT.title(f"Bidirectional Dijikstra - {graph[1][start]} to {graph[1][goal]}")
@@ -303,6 +350,81 @@ def a_star(
             ROOT.update()
     return None, None
 
+def bidirectional_a_star(start, goal, graph, heuristic=dist_heuristic):
+    ROOT = Tk()  # creates new tkinter window
+    ROOT.title(f"Bidirectional A* - {graph[1][start]} to {graph[1][goal]}")
+    ROOT.lift()
+    ROOT.attributes("-topmost", True)
+    canvas = Canvas(ROOT, background="black")  # sets background color
+    draw_all_edges(ROOT, canvas, graph)
+
+    counter = 0
+    # Set up the fringe for both the forward and backward searches
+    forward_fringe = []
+    backward_fringe = []
+
+    # Set up the closed sets for both the forward and backward searches
+    forward_closed = {start: (0, [start])}
+    backward_closed = {goal: (0, [goal])}
+
+    # Set up the cost estimates for both the forward and backward searches
+    forward_cost = heuristic(start, goal, graph)
+    backward_cost = heuristic(goal, start, graph)
+
+    # Add the starting points to the fringes
+    heappush(forward_fringe, (forward_cost, start, [start]))
+    heappush(backward_fringe, (backward_cost, goal, [goal]))
+
+    while len(forward_fringe) > 0 and len(backward_fringe) > 0:
+        # Expand the next node in the forward search
+        forward_v = heappop(forward_fringe)
+        for child in graph[3][forward_v[1]]:
+            cost = forward_closed[forward_v[1]][0] + graph[4][(forward_v[1], child)]
+            if child not in forward_closed or forward_closed[child][0] > cost:
+                draw_line(canvas, *graph[5][forward_v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+                cost2 = heuristic(child, goal, graph)
+                heappush(forward_fringe, (cost + cost2, child, forward_v[2] + [child]))
+                forward_closed[child] = (cost, forward_v[2] + [child])
+                # Check if the child node has been explored in the backward search
+                if child in backward_closed:
+                    print("found thru forward")
+                    # We have found a path!
+                    path1 = forward_closed[child][1]
+                    path2 = backward_closed[child][1][::-1]  # Reverse the path from the backward search
+                    path = path1 + path2[1:]  # Concatenate the two paths and remove the overlapping node
+                    cost = forward_closed[child][0] + backward_closed[child][0]
+                    draw_final_path(ROOT, canvas, path, graph)
+                    ROOT.destroy()
+                    return path, cost
+
+        # Expand the next node in the backward search
+        backward_v = heappop(backward_fringe)
+        for child in graph[3][backward_v[1]]:
+            cost = backward_closed[backward_v[1]][0] + graph[4][(backward_v[1], child)]
+            if child not in backward_closed or backward_closed[child][0] > cost:
+                draw_line(canvas, *graph[5][backward_v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+                cost2 = heuristic(child, start, graph)
+                heappush(backward_fringe, (cost + cost2, child, backward_v[2] + [child]))
+                backward_closed[child] = (cost, backward_v[2] + [child])
+                # Check if the child node has been explored in the forward search
+                if child in forward_closed:
+                    # We have found a path!
+                    print("found thru backwards")
+                    path2 = forward_closed[child][1]
+                    path1 = backward_closed[child][1][::-1]  
+                    path = path2 + path1[1:]  # Concatenate the two paths and remove the overlapping node
+                    cost = forward_closed[child][0] + backward_closed[child][0]
+                    draw_final_path(ROOT, canvas, path, graph)
+                    ROOT.destroy()
+                    return path, cost
+        counter += 1
+        if counter % 1000 == 0:
+            ROOT.update()
+    # If we reach this point, it means that we have explored all nodes in both fringes
+    # without finding a path, so we return None
+    return None, None
+
+
 def reverse_a_star(
     start, goal, graph, heuristic=dist_heuristic
 ):  # incase we want to change heuristic later
@@ -356,8 +478,10 @@ def main():
     "1": (dijkstra, "Dijikstra"),
     "2": (bidirectional_dijkstra, "Bidirectional Dijikstra"),
     "3": (dijkstra_dfs, "Dijikstra DFS"),
-    "4": (a_star, "A*"),
-    "5": (reverse_a_star, "Reverse A*"),
+    "4": (dijikstra_iddfs, "Dijikstra ID-DFS"),
+    "5": (a_star, "A*"),
+    "6": (reverse_a_star, "Reverse A*"),
+    "7": (bidirectional_a_star, "Bidirectional A*")
     }
     if len(sys.argv) > 1:
         start, goal = sys.argv[1], sys.argv[2]
@@ -377,7 +501,7 @@ def main():
     print(f"Time to create graph: {(perf_counter() - cur_time)}")
 
     # Get the search from user input
-    search = input("Search type (1: Dijikstra, 2: Bidirectional Dijikstra, 3: Dijikstra DFS, 4: A*, 5: Reverse A*): ")
+    search = input("Search type (1: Dijikstra, 2: Bidirectional Dijikstra, 3: Dijikstra DFS, 4: Dijikstra ID-DFS, 5: A*, 6: Reverse A*, 7: Bidirectional A*): ")
     if search not in SEARCHES:
         raise NameError(f"Invalid search type ({search})")
     search, name = SEARCHES[search]

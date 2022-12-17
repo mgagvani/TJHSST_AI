@@ -372,6 +372,7 @@ def make_move(board, token, index):
 
 
 def score(board):
+    '''
     # to win against random, emphasize mobility in early stages
     # and number of tokens gained in later stages
     # currently is not good - we should apply these principles to the new one
@@ -476,7 +477,7 @@ def score(board):
     score += (poss_to_move - poss_to_move_2) * 10000 * empty # value more if there are more possible moves (mobility)
     return score
     '''
-    '''
+    
     if board.count(EMPTY) == 0:
         return (board.count("x") - board.count("o")) * 100000000000
     # return board.count("x") - board.count("o")    
