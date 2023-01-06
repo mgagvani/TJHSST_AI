@@ -3,8 +3,18 @@
 import sys
 from time import perf_counter, sleep
 from math import pi, acos, sin, cos
-from heapq import heappush, heappop, _heappop_max, heapify
+from heapq import heappush, heappop, _heappop_max
 from tkinter import *
+from tkinter import messagebox
+
+
+# Globals used for GUI
+START = None
+DEST = None
+SEARCH = None
+MODE = "Dark"
+SPEED = 10
+
 
 def calcd(y1, x1, y2, x2):
     """'
@@ -66,6 +76,17 @@ def make_graph(
                 temp1[0], temp1[1], temp2[0], temp2[1]
             )  # tuple is key of edgeCost dict
             edgeCost[(r2, r1)] = calcd(temp1[0], temp1[1], temp2[0], temp2[1])
+    line_array = []
+    with open("north_america_boundaries.txt", "r") as file4:
+        for line4 in file4:
+            line_array.append(line4.strip().split(" "))
+    line_polys = [[]]
+    for line in line_array:
+        if line[0] != "":
+            line_polys[-1].append([float(line[0]), float(line[1])])
+        else:
+            pass
+            # line_polys.append([])
     for a in neighbors:
         for b in neighbors[a]:
             edgeCost[(a, b)] = calcd(
@@ -74,13 +95,21 @@ def make_graph(
             edgeCost[(b, a)] = calcd(
                 nodeLoc[a][0], nodeLoc[a][1], nodeLoc[b][0], nodeLoc[b][1]
             )
+    map_polys = []
+    for poly in line_polys:
+        map_polys.append([])
+        for point in poly:
+            point[0] = ((point[0] - 10) / 60) * 800
+            point[1] = ((point[1] + 130) / 70) * 1200
+            map_polys[-1].append(point[0])
+            map_polys[-1].append(point[1])
     for node in nodeLoc:  # checks each
         lat = float(nodeLoc[node][0])  # gets latitude
         long = float(nodeLoc[node][1])  # gets longitude
         modlat = (lat - 10) / 60  # scales to 0-1
         modlong = (long + 130) / 70  # scales to 0-1
-        map[node] = [modlat * 800, modlong * 1200]  # scales to fit 800 x 1200 window
-    return [nodeLoc, nodeToCity, cityToNode, neighbors, edgeCost, map]
+        map[node] = [modlat * 800.0, modlong * 1200.0]  # scales to fit 800 x 1200 window
+    return [nodeLoc, nodeToCity, cityToNode, neighbors, edgeCost, map, map_polys]
 
 
 def dist_heuristic(n1, n2, graph):
@@ -95,6 +124,23 @@ def draw_line(canvas, y1, x1, y2, x2, col, line_width=1):
         print(e)
         sys.exit(1)
 
+def draw_line_out(canvas, y1, x1, y2, x2, col, line_width=1):
+    '''
+    draws line w/ overdraw to prevent weird artifacts
+    '''
+    x1, y1, x2, y2 = float(x1), float(y1), float(x2), float(y2)
+    try:
+        # if MODE == "dark":
+        #     canvas.create_rectangle(x1, y1, x2, y2, fill='black', outline='black')
+        # else:
+        #     canvas.create_rectangle(x1, y1, x2, y2, fill='white', outline='white')
+        id = canvas.create_line(x1, 800 - y1, x2, 800 - y2, fill=col, width=line_width)
+        return id
+    except Exception as e:
+        print("Tkinter error: ")
+        print(e)
+        sys.exit(1)
+
 
 def draw_final_path(ROOT, canvas, path, graph, col="green"):
     # print(path)
@@ -102,15 +148,34 @@ def draw_final_path(ROOT, canvas, path, graph, col="green"):
         draw_line(canvas, *graph[5][path[p]], *graph[5][path[p + 1]], col, 5)
         ROOT.update()
     sleep(5) # pause for 5 sec
-    ROOT.quit() # close the window
+    ROOT.destroy() # close the window
 
-
-def draw_all_edges(ROOT, canvas, graph):
+# draws all edges and returns canvas ids corresponding with edges
+def draw_all_edges_out(ROOT, canvas, graph, color="white"):
     ROOT.geometry("1200x800")  # sets geometry
-
+    counter = 0
+    edge2id = {}
     canvas.pack(fill=BOTH, expand=1)  # sets fill expand
     for n1, n2 in graph[4]:  # graph[4] keys are edge set
-        draw_line(canvas, *graph[5][n1], *graph[5][n2], "white")  # graph[5] is map dict
+        # print(n1, n2, graph[4][(n1, n2)])
+        edge2id[(n1, n2)] = draw_line_out(canvas, *graph[5][n1], *graph[5][n2], color)  # graph[5] is map dict
+        edge2id[(n2, n1)] = edge2id[(n1, n2)]
+        # print("DOES THIS NEVER HAPPEN?????")
+        # print(edge2id[(n1, n2)], n1, n2)
+    # for poly in graph[6]:
+    #     canvas.create_polygon(poly, fill="grey", outline="blue")
+    ROOT.update()
+    return edge2id
+
+def draw_all_edges(ROOT, canvas, graph, color="white"):
+    ROOT.geometry("1200x800")  # sets geometry
+    counter = 0
+    canvas.pack(fill=BOTH, expand=1)  # sets fill expand
+    for n1, n2 in graph[4]:  # graph[4] keys are edge set
+        # print(n1, n2, graph[4][(n1, n2)])
+        draw_line(canvas, *graph[5][n1], *graph[5][n2], color)  # graph[5] is map dict
+    # for poly in graph[6]:
+    #     canvas.create_polygon(poly, fill="grey", outline="blue")
     ROOT.update()
 
 def dijkstra(start, goal, graph):
@@ -118,8 +183,12 @@ def dijkstra(start, goal, graph):
     ROOT.title(f"Dijikstra - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+        edge2id = draw_all_edges_out(ROOT, canvas, graph)
+    else:
+        canvas = Canvas(ROOT, background="white")
+        edge2id = draw_all_edges_out(ROOT, canvas, graph, color="black")
     counter = 0
 
     fringe = []
@@ -142,10 +211,18 @@ def dijkstra(start, goal, graph):
                 heappush(fringe, (cost, child, v[2] + [child]))
                 closed[child] = (cost, v[2] + [child])
                 # print("hello")
-                # print(*tuple(graph[5][v]), *tuple(graph[5][child]))
-                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+                # TODO use edge2id to change color of edge instead of redrawing
+                # print(edge2id[(v[1], child)])
+                # ADD ANOTHER IF STATEMENTS SO THAT IF COST IS BIGGER
+                # THEN COLOR IT IN BUT DONT ACTUALLY HEAP PUSH
+                # because the path is not optimal but we still have to color it in
+                canvas.itemconfig(edge2id[(v[1], child)], fill="OrangeRed2", width=2)
+                draw_line_out(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+            if child in closed:
+                canvas.itemconfig(edge2id[(v[1], child)], fill="OrangeRed2", width=2)
+                draw_line_out(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2")
         counter += 1
-        if counter % 6000 == 0:
+        if counter % (SPEED * 600) == 0:
             ROOT.update()
     return None, None
 
@@ -154,8 +231,12 @@ def dijkstra_dfs(start, goal, graph):
     ROOT.title(f"Dijikstra DFS - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+        edgeid = draw_all_edges_out(ROOT, canvas, graph)
+    else:
+        canvas = Canvas(ROOT, background="white")
+        edgeid = draw_all_edges_out(ROOT, canvas, graph, color="black")
     counter = 0
 
     fringe = []
@@ -179,14 +260,21 @@ def dijkstra_dfs(start, goal, graph):
                 closed[child] = (cost, v[2] + [child])
                 # print("hello")
                 # print(*tuple(graph[5][v]), *tuple(graph[5][child]))
-                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+                canvas.itemconfig(edgeid[(v[1], child)], fill="OrangeRed2", width=2)
+                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2", line_width=2)
+            if child in closed:
+                canvas.itemconfig(edgeid[(v[1], child)], fill="OrangeRed2", width=2)
+                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2", line_width=2)
         counter += 1
-        if counter % 6000 == 0:
+        if counter % (SPEED * 600) == 0:
             ROOT.update()
     return None, None
 
 def dijkstra_Kdfs(start, goal, graph, depth, ROOT, canvas):
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        edge2id = draw_all_edges_out(ROOT, canvas, graph)
+    else:
+        edge2id = draw_all_edges_out(ROOT, canvas, graph, color="black")
     counter = 0
 
     fringe = []
@@ -211,8 +299,12 @@ def dijkstra_Kdfs(start, goal, graph, depth, ROOT, canvas):
                     heappush(fringe, (cost, child, v[2] + [child]))
                     closed[child] = (cost, v[2] + [child])
                     draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
+                    canvas.itemconfig(edge2id[(v[1], child)], fill="OrangeRed2", width=2)
+                if child in closed:
+                    canvas.itemconfig(edge2id[(v[1], child)], fill="OrangeRed2", width=2)
+                    draw_line(canvas, *graph[5][v[1]], *graph[5][child], "OrangeRed2")
         counter += 1
-        if counter % (depth * 2) == 0:
+        if counter % int((depth * 0.2 * SPEED)) == 0:
             ROOT.update()
     return None, None
 
@@ -222,7 +314,10 @@ def dijikstra_iddfs(start, goal, graph):
     ROOT.title(f"Dijikstra ID-DFS - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+    else:
+        canvas = Canvas(ROOT, background="white")
 
     max_depth = INCR
     result = (None, None)
@@ -237,8 +332,12 @@ def bidirectional_dijkstra(start, goal, graph):
     ROOT.title(f"Bidirectional Dijikstra - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+        edge2id = draw_all_edges_out(ROOT, canvas, graph)
+    else:
+        canvas = Canvas(ROOT, background="white")
+        edge2id = draw_all_edges_out(ROOT, canvas, graph, color="black")
     # Create dictionaries to store the cost and path of the visited nodes for both directions
     closed_start = {start: (0, [start])}
     closed_goal = {goal: (0, [goal])}
@@ -265,7 +364,6 @@ def bidirectional_dijkstra(start, goal, graph):
             ROOT.destroy()
             return path, cost
         intersect.add(v_start[1])
-
         # Iterate over the children of the node
         for child in graph[3][v_start[1]]:
             if child in intersect:
@@ -275,8 +373,10 @@ def bidirectional_dijkstra(start, goal, graph):
                 heappush(fringe_start, (cost, child, v_start[2] + [child]))
                 closed_start[child] = (cost, v_start[2] + [child])
                 draw_line(canvas, *graph[5][v_start[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
-
-
+                canvas.itemconfig(edge2id[(v_start[1], child)], fill="OrangeRed2", width=2)
+            if child in closed_start:
+                canvas.itemconfig(edge2id[(v_start[1], child)], fill="OrangeRed2", width=2)
+                draw_line(canvas, *graph[5][v_start[1]], *graph[5][child], "OrangeRed2")
         # Pop the node with the smallest cost from the goal heap
         v_goal = heappop(fringe_goal)
         # If the node has been visited from the other direction, return the path and cost
@@ -290,7 +390,6 @@ def bidirectional_dijkstra(start, goal, graph):
             ROOT.destroy()
             return path, cost
         intersect.add(v_goal[1])
-
         # Iterate over the children of the node
         for child in graph[3][v_goal[1]]:
             if child in intersect:
@@ -300,11 +399,14 @@ def bidirectional_dijkstra(start, goal, graph):
                 heappush(fringe_goal, (cost, child, v_goal[2] + [child]))
                 closed_goal[child] = (cost, v_goal[2] + [child])
                 draw_line(canvas, *graph[5][v_goal[1]], *graph[5][child], "OrangeRed2") # star unpacks the list
-
+                canvas.itemconfig(edge2id[(v_goal[1], child)], fill="OrangeRed2", width=2)
+            if child in closed_goal:
+                canvas.itemconfig(edge2id[(v_goal[1], child)], fill="OrangeRed2", width=2)
+                draw_line(canvas, *graph[5][v_goal[1]], *graph[5][child], "OrangeRed2")
 
         # Increment the counter and check if it is divisible by 6000
         counter += 1
-        if counter % 2000 == 0:
+        if counter % (200 * SPEED) == 0:
             # Update the Tkinter window
             ROOT.update()
 
@@ -320,8 +422,12 @@ def a_star(
     ROOT.title(f"A* - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+        edge2id =  draw_all_edges_out(ROOT, canvas, graph, color="white")
+    else:
+        canvas = Canvas(ROOT, background="white")
+        edge2id =  draw_all_edges_out(ROOT, canvas, graph, color="black")
 
     counter = 0
 
@@ -345,6 +451,10 @@ def a_star(
                 heappush(fringe, (cost + cost2, child, v[2] + [child]))
                 closed[child] = (cost, v[2] + [child])
                 draw_line(canvas, *graph[5][v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+                canvas.itemconfig(edge2id[(v[1], child)], fill="firebrick1", width=2)
+            if child in closed:
+                canvas.itemconfig(edge2id[(v[1], child)], fill="firebrick1", width=2)
+                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "firebrick1")
         counter += 1
         if counter % 2000 == 0:
             ROOT.update()
@@ -355,8 +465,12 @@ def bidirectional_a_star(start, goal, graph, heuristic=dist_heuristic):
     ROOT.title(f"Bidirectional A* - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+        edge2id =  draw_all_edges_out(ROOT, canvas, graph, color="white")
+    else:
+        canvas = Canvas(ROOT, background="white")
+        edge2id =  draw_all_edges_out(ROOT, canvas, graph, color="black") # sets background color to white
 
     counter = 0
     # Set up the fringe for both the forward and backward searches
@@ -382,6 +496,7 @@ def bidirectional_a_star(start, goal, graph, heuristic=dist_heuristic):
             cost = forward_closed[forward_v[1]][0] + graph[4][(forward_v[1], child)]
             if child not in forward_closed or forward_closed[child][0] > cost:
                 draw_line(canvas, *graph[5][forward_v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+                canvas.itemconfig(edge2id[(forward_v[1], child)], fill="firebrick1", width=2)
                 cost2 = heuristic(child, goal, graph)
                 heappush(forward_fringe, (cost + cost2, child, forward_v[2] + [child]))
                 forward_closed[child] = (cost, forward_v[2] + [child])
@@ -396,6 +511,9 @@ def bidirectional_a_star(start, goal, graph, heuristic=dist_heuristic):
                     draw_final_path(ROOT, canvas, path, graph)
                     ROOT.destroy()
                     return path, cost
+            if child in forward_closed:
+                canvas.itemconfig(edge2id[(forward_v[1], child)], fill="firebrick1", width=2)
+                draw_line(canvas, *graph[5][forward_v[1]], *graph[5][child], "firebrick1")
 
         # Expand the next node in the backward search
         backward_v = heappop(backward_fringe)
@@ -403,6 +521,7 @@ def bidirectional_a_star(start, goal, graph, heuristic=dist_heuristic):
             cost = backward_closed[backward_v[1]][0] + graph[4][(backward_v[1], child)]
             if child not in backward_closed or backward_closed[child][0] > cost:
                 draw_line(canvas, *graph[5][backward_v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+                canvas.itemconfig(edge2id[(backward_v[1], child)], fill="firebrick1", width=2)
                 cost2 = heuristic(child, start, graph)
                 heappush(backward_fringe, (cost + cost2, child, backward_v[2] + [child]))
                 backward_closed[child] = (cost, backward_v[2] + [child])
@@ -417,8 +536,11 @@ def bidirectional_a_star(start, goal, graph, heuristic=dist_heuristic):
                     draw_final_path(ROOT, canvas, path, graph)
                     ROOT.destroy()
                     return path, cost
+            if child in backward_closed:
+                canvas.itemconfig(edge2id[(backward_v[1], child)], fill="firebrick1", width=2)
+                draw_line(canvas, *graph[5][backward_v[1]], *graph[5][child], "firebrick1")
         counter += 1
-        if counter % 1000 == 0:
+        if counter % (SPEED * 100) == 0:
             ROOT.update()
     # If we reach this point, it means that we have explored all nodes in both fringes
     # without finding a path, so we return None
@@ -433,8 +555,12 @@ def reverse_a_star(
     ROOT.title(f"Reverse A* - {graph[1][start]} to {graph[1][goal]}")
     ROOT.lift()
     ROOT.attributes("-topmost", True)
-    canvas = Canvas(ROOT, background="black")  # sets background color
-    draw_all_edges(ROOT, canvas, graph)
+    if MODE == "dark":
+        canvas = Canvas(ROOT, background="black")  # sets background color
+        edge2id = draw_all_edges_out(ROOT, canvas, graph)
+    else:
+        canvas = Canvas(ROOT, background="white")
+        edge2id = draw_all_edges_out(ROOT, canvas, graph, "black")
 
     counter = 0
 
@@ -458,8 +584,12 @@ def reverse_a_star(
                 heappush(fringe, (cost + cost2, child, v[2] + [child]))
                 closed[child] = (cost, v[2] + [child])
                 draw_line(canvas, *graph[5][v[1]], *graph[5][child], "firebrick1") # star unpacks the list
+                canvas.itemconfig(edge2id[(v[1], child)], fill="firebrick1", width=2)
+            if child in closed:
+                canvas.itemconfig(edge2id[(v[1], child)], fill="firebrick1", width=2)
+                draw_line(canvas, *graph[5][v[1]], *graph[5][child], "firebrick1")
         counter += 1
-        if counter % 2000 == 0:
+        if counter % (1000 * SPEED) == 0:
             ROOT.update()
     return None, None
 
@@ -514,6 +644,123 @@ def main():
 
     # assert cost_0 == cost_1  # sanity check
 
+# global for gui
+SEARCHES = {
+    "1": (dijkstra, "Dijikstra"),
+    "2": (bidirectional_dijkstra, "Bidirectional Dijikstra"),
+    "3": (dijkstra_dfs, "Dijikstra DFS"),
+    "4": (dijikstra_iddfs, "Dijikstra ID-DFS"),
+    "5": (a_star, "A*"),
+    "6": (reverse_a_star, "Reverse A*"),
+    "7": (bidirectional_a_star, "Bidirectional A*")
+}
+GRAPH = make_graph("./rrNodes.txt", "./rrNodeCity.txt", "./rrEdges.txt")
+
+def start_handler(event):
+    global START
+    START = event 
+
+def end_handler(event):
+    global DEST
+    DEST = event
+
+def search_handler(event):
+    global SEARCH
+    for search in SEARCHES.values():
+        if event == search[1]:
+            SEARCH = search[0]
+            break
+
+def lightmode_handler():
+    global MODE
+    MODE = "light"
+
+def darkmode_handler():
+    global MODE
+    MODE = "dark"
+
+def runner():
+    global START, DEST, SEARCH, MODE
+    if START is None or DEST is None or SEARCH is None:
+        messagebox.showerror("Error", "Please select a start, end, and search type")
+        return
+    if START == DEST:
+        messagebox.showwarning("Warning", "Start and end are the same")
+        return
+    SEARCH(GRAPH[2][START], GRAPH[2][DEST], GRAPH)
+    
+
+def gui_main():
+    # read in graph
+    graph = make_graph("./rrNodes.txt", "./rrNodeCity.txt", "./rrEdges.txt")
+
+    # Set up the window
+    window = Tk()
+    window.title("Manav Gagvani - Train Routes")
+    window.resizable(width=False, height=False)
+
+    info = Frame(master=window, borderwidth=1)
+    info.grid(row=0, column=0, padx=5, pady=5) # i, j, padx, pady
+    infolabel = Label(master=info, text="Select Start and Destination Cities")
+    infolabel.pack()
+
+    start = Frame(master=window, borderwidth=1)
+    start.grid(row=0, column=1, padx=5, pady=5) # i, j, padx, pady
+    startlabel = Label(master=start, text="Start:")
+    start_str = StringVar(window)
+    startdropdown = OptionMenu(start, start_str, *graph[1].values(), command=start_handler)
+    startlabel.pack()
+    startdropdown.pack()
+
+    dest = Frame(master=window, borderwidth=1)
+    dest.grid(row=0, column=2, padx=5, pady=5) # i, j, padx, pady
+    destlabel = Label(master=dest, text="Destination:")
+    dest_str = StringVar(window)
+    destdropdown = OptionMenu(dest, dest_str, *graph[1].values(), command=end_handler)
+    destlabel.pack()
+    destdropdown.pack()
+
+    searchinfo = Frame(master=window, borderwidth=1)
+    searchinfo.grid(row=1, column=0, padx=5, pady=5) # i, j, padx, pady
+    searchinfolabel = Label(master=searchinfo, text="Select Search Type")
+    searchinfolabel.pack()
+
+    search = Frame(master=window, borderwidth=1)
+    search.grid(row=1, column=1, padx=5, pady=5) # i, j, padx, pady
+    searchlabel = Label(master=search, text="Dijikstra Variants:")
+    search_str = StringVar(window)
+    searchdropdown = OptionMenu(search, search_str, *[SEARCH[1] for SEARCH in SEARCHES.values()][:4], command=search_handler)
+    searchlabel.pack()
+    searchdropdown.pack()
+
+    search2 = Frame(master=window, borderwidth=1)
+    search2.grid(row=1, column=2, padx=5, pady=5) # i, j, padx, pady
+    searchlabel2 = Label(master=search2, text="A* Variants:")
+    searchdropdown2 = OptionMenu(search2, search_str, *[SEARCH[1] for SEARCH in SEARCHES.values()][4:], command=search_handler)
+    searchlabel2.pack()
+    searchdropdown2.pack()
+
+    colormode = Frame(master=window, borderwidth=1)
+    colormode.grid(row=2, column=0, padx=5, pady=5) # i, j, padx, pady
+    lightmodebtn = Button(master=colormode, text="Light Mode", command=lightmode_handler, pady=5)
+    darkmodebtn = Button(master=colormode, text="Dark Mode", command=darkmode_handler, pady=5)
+    lightmodebtn.pack()
+    darkmodebtn.pack()
+
+    speed = Frame(master=window, borderwidth=1)
+    speed.grid(row=2, column=1, padx=5, pady=5) # i, j, padx, pady
+    speedlabel = Label(master=speed, text="Speed:")
+    speedslider = Scale(master=speed, from_=1, to=10, orient=HORIZONTAL)
+    speedlabel.pack()
+    speedslider.pack()
+
+    go = Frame(master=window, borderwidth=1)
+    go.grid(row=2, column=2, padx=5, pady=5) # i, j, padx, pady
+    gobtn = Button(master=go, text="Go!", command=runner)
+    gobtn.pack()
+
+    # Run the application
+    window.mainloop()
 
 if __name__ == "__main__":
-    main()
+    gui_main()

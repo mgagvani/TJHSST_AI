@@ -2,11 +2,7 @@
 # Manav Gagvani
 import sys
 
-
 EMPTY = "."
-WIDTH = 8
-HEIGHT = 8
-assert WIDTH == HEIGHT
 
 # copied from slider puzzles
 def to_mat2(s, n):
@@ -370,6 +366,23 @@ def make_move(board, token, index):
 
     return board_2
 
+def helper_frontier(board, color):
+    """
+    Returns the number of empty spaces adjacent to a piece of the given color on the board
+    """
+    empty_spaces = 0
+    for i in range(len(board)):
+        if board[i] == color:
+            if i > 7 and board[i - 8] == EMPTY:  # check space above
+                empty_spaces += 1
+            if i < 56 and board[i + 8] == EMPTY:  # check space below
+                empty_spaces += 1
+            if i % 8 != 0 and board[i - 1] == EMPTY:  # check space to the left
+                empty_spaces += 1
+            if (i + 1) % 8 != 0 and board[i + 1] == EMPTY:  # check space to the right
+                empty_spaces += 1
+    return empty_spaces
+
 
 def score(board):
     '''
@@ -400,15 +413,17 @@ def score(board):
     empty = board.count(EMPTY)
     xcount = board.count("x")
     ocount = board.count("o")
+    poss_to_move = len(possible_moves(board, 'x')) # value the number of possible moves
+    poss_to_move_2 = len(possible_moves(board, 'o'))
     if empty > 32: 
-        score += sum((len(possible_moves(board, "x")), len(possible_moves(board, "o")))) * 5000 * (64 - empty) # value more if there are more empty squares
+        score += sum((poss_to_move, poss_to_move_2)) * 5000 * (64 - empty) # value more if there are more empty squares
     # elif empty < 8: # prioritize having more pieces than the opponent in the endgame
     if xcount > ocount:
-        proportion = board.count("x") / board.count("o")
+        proportion = xcount / (ocount+0.1)
         # print("score impact: ", 10 ** (int(proportion)), proportion)
         score += 20 ** (int(proportion))
     elif ocount > xcount:
-        proportion = board.count("o") / board.count("x")
+        proportion = ocount / (xcount+0.1)
         # print("score impact: ", 10 ** (int(proportion)), proportion)
         score -= 20 ** (int(proportion))
     else:
@@ -470,6 +485,10 @@ def score(board):
         score += 100000 
     elif(diag_2.count('o') >= 7):
         score -= 100000
+
+    # frontier
+    score -= helper_frontier(board, 'x') * 1000
+    score += helper_frontier(board, 'o') * 1000
 
     poss_to_move = len(possible_moves(board, 'x')) # value the number of possible moves
     poss_to_move_2 = len(possible_moves(board, 'o'))
@@ -567,6 +586,53 @@ def minimax0(board, current_player, depth, a, b):
     else:
         return ValueError("current_player must be x or o")
 
+def minimax1(board, current_player, depth, a, b): # transposition table
+    if (
+        depth == 0 # end of iterating
+        or game_over(board) 
+        or len(possible_moves(board, current_player)) == 0 # no moves available
+    ):
+        return score(board)
+
+    # global TTABLE
+    # print("ttable at beginning--> ", len(TTABLE))
+    if board in TTABLE.keys():
+        return TTABLE[board]
+
+    available_indices = possible_moves(board, current_player)
+
+    if current_player == "x":
+        value = float("-inf")
+        for idx in available_indices:
+            new_board = make_move(board, "x", idx)
+            value = max(value, minimax1(new_board, "o", depth - 1, a, b))
+            # "ALPHA/BETA PRUNING HERE"
+            a = max(a, value)
+
+            if value >= b:
+                break
+        TTABLE[board] = value   
+        # print(len(TTABLE))     
+        return value
+
+    elif current_player == "o":
+        value = float("inf")
+        for idx in available_indices:
+            new_board = make_move(board, "o", idx)
+            value = min(value, minimax1(new_board, "x", depth - 1, a, b))
+
+            b = min(b, value)
+
+            if value <= a:
+                break
+        TTABLE[board] = value
+        # print(len(TTABLE))           
+        return value
+    
+    else:
+        return ValueError("current_player must be x or o")
+
+
 def minimax(board, current_player, depth, a, b):
     if (
         depth == 0 # end of iterating
@@ -621,7 +687,7 @@ def find_next_move(board, player, depth):
 
     if player == "x":
         moves = [
-            (minimax0(make_move(board, player, i), "o", depth, a, b), i)
+            (minimax1(make_move(board, player, i), "o", depth, a, b), i)
             for i in (possible_moves(board, player))
         ]
         print(moves)
@@ -629,7 +695,7 @@ def find_next_move(board, player, depth):
 
     elif player == "o":
         moves = [
-            (minimax0(make_move(board, player, i), "x", depth, a, b), i)
+            (minimax1(make_move(board, player, i), "x", depth, a, b), i)
             for i in (possible_moves(board, player))
         ]
         print(moves)
@@ -653,17 +719,37 @@ class Strategy:
             depth += 1
 
 
+# if __name__ == "__main__":
+#     board = sys.argv[1]
+# 
+#     player = sys.argv[2]
+# 
+#     depth = 1
+# 
+#     for count in range(board.count(EMPTY)):  
+#     # No need to look more spaces into the future than exist at all
+#         # print(len(TTABLE), depth, " <<<")
+#         print(find_next_move(board, player, depth))
+# 
+#         depth += 1
+
 if __name__ == "__main__":
-    board = sys.argv[1]
-
-    player = sys.argv[2]
-
-    depth = 1
-
-    for count in range(
-        board.count(EMPTY)
-    ):  # No need to look more spaces into the future than exist at all
-
-        print(find_next_move(board, player, depth))
-
-        depth += 1
+    import time
+    results = []; TTABLE = {}
+    with open("boards_timing.txt") as f:
+        for line in f:
+            board, token = line.strip().split()
+            temp_list = [board, token]
+            print(temp_list)
+            for count in range(1, 700):
+                print("depth", count)
+                start = time.perf_counter()
+                find_next_move(board, token, count)
+                end = time.perf_counter()
+                temp_list.append(str(end - start))
+            print(temp_list)
+            print()
+            results.append(temp_list)
+    with open("boards_timing_my_results.csv", "w") as g:
+        for l in results:
+            g.write(", ".join(l) + "\n")
